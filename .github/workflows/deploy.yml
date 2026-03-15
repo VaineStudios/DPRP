@@ -49,14 +49,14 @@ jobs:
       # ── Configure SSH ─────────────────────────────────────
       - name: Diagnose EC2 SSH connectivity
         env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_HOST: ${{ env.EC2_HOST }}
           EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
           SSH_PORT: ${{ env.SSH_PORT }}
         run: |
           set +e
           echo "::group::Secret presence checks"
-          if [ -n "$EC2_HOST" ]; then
+          if [ -n "$env.EC2_HOST" ]; then
             echo "EC2_HOST is set"
           else
             echo "::error::EC2_HOST is empty or missing"
@@ -89,12 +89,12 @@ jobs:
           echo "::endgroup::"
 
           echo "::group::DNS and network reachability"
-          echo "Testing host: ${EC2_HOST}"
-          getent hosts "$EC2_HOST" || true
-          host "$EC2_HOST" || true
-          dig +short "$EC2_HOST" || true
-          ping -c 1 "$EC2_HOST" || true
-          nc -vz "$EC2_HOST" "$SSH_PORT"
+          echo "Testing host: ${env.EC2_HOST}"
+          getent hosts "$env.EC2_HOST" || true
+          host "$env.EC2_HOST" || true
+          dig +short "$env.EC2_HOST" || true
+          ping -c 1 "$env.EC2_HOST" || true
+          nc -vz "$env.EC2_HOST" "$SSH_PORT"
           echo "nc exit code: $?"
           timeout 10 bash -c "</dev/tcp/$EC2_HOST/$SSH_PORT"
           echo "/dev/tcp exit code: $?"
@@ -113,7 +113,7 @@ jobs:
 
           echo "::group::Host key scan"
           rm -f ~/.ssh/known_hosts
-          ssh-keyscan -T 10 -p "$SSH_PORT" -H "$EC2_HOST" | tee -a ~/.ssh/known_hosts
+          ssh-keyscan -T 10 -p "$SSH_PORT" -H "$env.EC2_HOST" | tee -a ~/.ssh/known_hosts
           echo "ssh-keyscan exit code: $?"
           wc -l ~/.ssh/known_hosts || true
           echo "::endgroup::"
@@ -128,7 +128,7 @@ jobs:
             StrictHostKeyChecking yes
             IdentityFile ~/.ssh/id_rsa
           EOF
-          ssh -vvv -o BatchMode=yes "${EC2_USERNAME}@${EC2_HOST}" "echo connected && whoami && hostname"
+          ssh -vvv -o BatchMode=yes "${EC2_USERNAME}@${env.EC2_HOST}" "echo connected && whoami && hostname"
           echo "ssh exit code: $?"
           echo "::endgroup::"
 
@@ -137,7 +137,7 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -T 10 -p "${{ env.SSH_PORT }}" -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -T 10 -p "${{ env.SSH_PORT }}" -H "${{ env.EC2_HOST }}" >> ~/.ssh/known_hosts
           cat >> ~/.ssh/config <<EOF
           Host *
             ConnectTimeout 15
