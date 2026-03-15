@@ -49,14 +49,14 @@ jobs:
       # ── Configure SSH ─────────────────────────────────────
       - name: Diagnose EC2 SSH connectivity
         env:
-          EC2_HOST: ${{ vars.EC2_HOST }}
+          EC2_HOST: ${{ env.EC2_HOST }}
           EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
           SSH_PORT: ${{ env.SSH_PORT }}
         run: |
           set +e
           echo "::group::Secret presence checks"
-          if [ -n "$EC2_HOST" ]; then
+          if [ -n "$env.EC2_HOST" ]; then
             echo "EC2_HOST is set"
           else
             echo "::error::EC2_HOST is empty or missing"
@@ -89,11 +89,11 @@ jobs:
           echo "::endgroup::"
 
           echo "::group::DNS and network reachability"
-          echo "Testing host: ${EC2_HOST}"
+          echo "Testing host: ${env.EC2_HOST}"
           getent hosts "$EC2_HOST" || true
-          host "$EC2_HOST" || true
-          dig +short "$EC2_HOST" || true
-          ping -c 1 "$EC2_HOST" || true
+          host "$env.EC2_HOST" || true
+          dig +short "$env.EC2_HOST" || true
+          ping -c 1 "$env.EC2_HOST" || true
           nc -vz "$EC2_HOST" "$SSH_PORT"
           echo "nc exit code: $?"
           timeout 10 bash -c "</dev/tcp/$EC2_HOST/$SSH_PORT"
