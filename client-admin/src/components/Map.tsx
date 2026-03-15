@@ -21,7 +21,7 @@ interface MapProps {
 
 // Jamaica center coordinates
 const JAMAICA_CENTER: [number, number] = [18.15, -77.3];
-const JAMAICA_ZOOM = 9;
+const JAMAICA_ZOOM = 10;
 const JAMAICA_BOUNDS: L.LatLngBoundsExpression = [
   [17.4, -78.6],  // SW corner
   [18.7, -75.8],  // NE corner

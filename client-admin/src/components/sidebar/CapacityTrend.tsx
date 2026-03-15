@@ -145,7 +145,7 @@ const CapacityTrend = ({ shelters }: CapacityTrendProps) => {
             cornerRadius: 6,
             displayColors: false,
             callbacks: {
-              label: (ctx) => `${Math.round(ctx.parsed.y)}% capacity`,
+              label: (ctx) => `${Math.round(Number(ctx.parsed.y) || 0)}% capacity`,
             },
           },
         },

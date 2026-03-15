@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { DisasterEvent } from '../api/client';
 import DisasterSelector from '../components/DisasterSelector';
 import EventOverview from '../components/preparedness/EventOverview';
@@ -18,47 +18,61 @@ const Preparedness = ({ disasters, onPanToParish }: PreparednessProps) => {
   const [selectedId, setSelectedId] = useState<string | null>(
     preparingEvents[0]?.id ?? null
   );
+  const [isWide, setIsWide] = useState(window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const onResize = () => setIsWide(window.innerWidth >= 1024);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const selectedEvent = disasters.find(d => d.id === selectedId) ?? null;
 
   return (
     <div style={styles.container}>
       <div style={styles.content}>
-        <div style={styles.heading}>
-          <h2 style={styles.headingText}>Preparedness analytics</h2>
-          <p style={styles.headingSubtext}>
-            IRIS-powered intelligence for disaster planning professionals
-          </p>
+        {/* Heading + inline event selector */}
+        <div style={styles.headingRow}>
+          <div>
+            <h2 style={styles.headingText}>Preparedness analytics</h2>
+            <p style={styles.headingSubtext}>
+              IRIS-powered intelligence for disaster planning professionals
+            </p>
+          </div>
+          <div style={styles.selectorInline}>
+            <DisasterSelector
+              disasters={preparingEvents}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+            />
+          </div>
         </div>
 
-        {/* Event selector */}
-        <div style={styles.selectorCard}>
-          <DisasterSelector
-            disasters={preparingEvents}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-          />
+        {/* Row 1: Event Overview + Resource Gap Analysis */}
+        <div style={{
+          ...styles.twoCol,
+          gridTemplateColumns: isWide ? '1fr 1fr' : '1fr',
+        }}>
+          <EventOverview event={selectedEvent} />
+          <ResourceGapAnalysis approachingEvent={selectedEvent} />
         </div>
 
-        {/* Event Overview */}
-        <EventOverview event={selectedEvent} />
-
-        {/* Historical Comparison */}
-        <HistoricalComparison approachingEvent={selectedEvent} />
-
-        {/* Vulnerability Assessment */}
+        {/* Full width: Vulnerability Assessment */}
         <VulnerabilityMap
           approachingEvent={selectedEvent}
           onParishClick={onPanToParish}
         />
 
-        {/* Resource Gap Analysis */}
-        <ResourceGapAnalysis approachingEvent={selectedEvent} />
+        {/* Row 2: Historical Comparison + IRIS Forecaster */}
+        <div style={{
+          ...styles.twoCol,
+          gridTemplateColumns: isWide ? '1fr 1fr' : '1fr',
+        }}>
+          <HistoricalComparison approachingEvent={selectedEvent} />
+          <IrisForecaster selectedEvent={selectedEvent} />
+        </div>
 
-        {/* IRIS Forecaster */}
-        <IrisForecaster selectedEvent={selectedEvent} />
-
-        {/* Scenario Modeler */}
+        {/* Full width: Scenario Modeler */}
         <ScenarioModeler />
       </div>
     </div>
@@ -78,8 +92,12 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column' as const,
     gap: 16,
   },
-  heading: {
-    marginBottom: 4,
+  headingRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap' as const,
+    gap: 12,
   },
   headingText: {
     fontSize: 24,
@@ -92,11 +110,16 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#64748b',
     margin: 0,
   },
-  selectorCard: {
+  selectorInline: {
     background: '#fff',
-    borderRadius: 12,
+    borderRadius: 10,
     boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-    padding: '16px 20px',
+    padding: '10px 16px',
+    minWidth: 220,
+  },
+  twoCol: {
+    display: 'grid',
+    gap: 16,
   },
 };
 

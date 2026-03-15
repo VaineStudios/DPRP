@@ -1,5 +1,8 @@
 import type { Shelter, UserResponse, DisasterEvent } from '../api/client';
 import { getPinColor } from '../utils/shelter';
+import BroadcastComposer from './BroadcastComposer';
+import NotificationPanel from './NotificationPanel';
+import type { NotificationItem } from './NotificationPanel';
 
 interface StatusBarProps {
   shelters: Shelter[];
@@ -9,6 +12,10 @@ interface StatusBarProps {
   activeTab: 'response' | 'preparedness';
   onTabChange: (tab: 'response' | 'preparedness') => void;
   irisAnalyzing?: boolean;
+  notifications: NotificationItem[];
+  unreadCount: number;
+  onNotificationsOpen: () => void;
+  onNotificationClick: (shelterId: string, lat: number, lng: number) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -18,7 +25,7 @@ const statusColors: Record<string, string> = {
   CLOSED: '#6b7280',
 };
 
-const StatusBar = ({ shelters, user, onLogout, activeEvent, activeTab, onTabChange, irisAnalyzing }: StatusBarProps) => {
+const StatusBar = ({ shelters, user, onLogout, activeEvent, activeTab, onTabChange, irisAnalyzing, notifications, unreadCount, onNotificationsOpen, onNotificationClick }: StatusBarProps) => {
   const total = shelters.length;
   const colors = shelters.map(getPinColor);
   const available = colors.filter(c => c === '#22c55e').length;
@@ -76,6 +83,13 @@ const StatusBar = ({ shelters, user, onLogout, activeEvent, activeTab, onTabChan
           <span style={irisAnalyzing ? styles.irisAmberDot : styles.irisGreenDot} />
           {irisAnalyzing ? 'IRIS: Analyzing...' : 'IRIS: Active'}
         </span>
+        <BroadcastComposer activeEvent={activeEvent} />
+        <NotificationPanel
+          notifications={notifications}
+          unreadCount={unreadCount}
+          onOpen={onNotificationsOpen}
+          onClick={onNotificationClick}
+        />
         <span style={styles.userName}>{user.name}</span>
         <button onClick={onLogout} style={styles.logout}>Sign out</button>
       </div>

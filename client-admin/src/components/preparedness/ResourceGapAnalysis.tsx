@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { DisasterEvent, Shelter } from '../../api/client';
+import type { DisasterEvent } from '../../api/client';
 import { getShelters, getDisasters, getEventTimeline } from '../../api/client';
 
 interface ResourceGapAnalysisProps {
@@ -99,12 +99,6 @@ const ResourceGapAnalysis = ({ approachingEvent }: ResourceGapAnalysisProps) => 
   }, [approachingEvent?.id]);
 
   if (!approachingEvent) return null;
-
-  const getBarColor = (hours: number) => {
-    if (hours >= 24) return '#22c55e';
-    if (hours >= 12) return '#f59e0b';
-    return '#ef4444';
-  };
 
   return (
     <div style={styles.card}>

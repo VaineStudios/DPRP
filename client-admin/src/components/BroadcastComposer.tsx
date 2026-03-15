@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { sendBroadcast, getBroadcasts } from '../api/client';
 import type { DisasterEvent, BroadcastMessage } from '../api/client';
 
@@ -15,6 +15,7 @@ const BroadcastComposer = ({ activeEvent }: BroadcastComposerProps) => {
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [recentBroadcasts, setRecentBroadcasts] = useState<BroadcastMessage[]>([]);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const parishes = activeEvent?.affectedParishes ?? [];
 
@@ -22,6 +23,18 @@ const BroadcastComposer = ({ activeEvent }: BroadcastComposerProps) => {
   useEffect(() => {
     if (!open) return;
     getBroadcasts(5).then(setRecentBroadcasts).catch(() => {});
+  }, [open]);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
   const toggleParish = useCallback((parish: string) => {
@@ -64,128 +77,130 @@ const BroadcastComposer = ({ activeEvent }: BroadcastComposerProps) => {
     }
   }, [message, sending, allShelters, selectedParishes, priority, activeEvent?.id]);
 
-  if (!open) {
-    return (
-      <div style={styles.collapsed}>
-        <button onClick={() => setOpen(true)} style={styles.openBtn}>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ marginRight: 6 }}>
-            <path d="M1 3h14M1 8h14M1 13h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          Send broadcast to shelters
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div style={styles.card}>
-      <div style={styles.header}>
-        <h3 style={styles.title}>Broadcast message</h3>
-        <button onClick={() => setOpen(false)} style={styles.closeBtn}>&times;</button>
-      </div>
-
-      <textarea
-        value={message}
-        onChange={e => setMessage(e.target.value.slice(0, 500))}
-        placeholder="Type your message to shelter managers..."
-        rows={3}
-        style={styles.textarea}
-      />
-      <div style={styles.charCount}>{message.length}/500</div>
-
-      {/* Priority toggle */}
-      <div style={styles.row}>
-        <span style={styles.label}>Priority:</span>
-        <button
-          onClick={() => setPriority('HIGH')}
-          style={priority === 'HIGH' ? styles.priorityActive : styles.priorityBtn}
-        >
-          HIGH
-        </button>
-        <button
-          onClick={() => setPriority('CRITICAL')}
-          style={{
-            ...(priority === 'CRITICAL' ? styles.priorityActive : styles.priorityBtn),
-            ...(priority === 'CRITICAL' ? { background: '#dc2626', borderColor: '#dc2626' } : {}),
-          }}
-        >
-          CRITICAL
-        </button>
-      </div>
-
-      {/* Parish targeting */}
-      <div style={styles.row}>
-        <span style={styles.label}>Target:</span>
-        <button
-          onClick={() => setAllShelters(true)}
-          style={allShelters ? styles.priorityActive : styles.priorityBtn}
-        >
-          All shelters
-        </button>
-        <button
-          onClick={() => setAllShelters(false)}
-          style={!allShelters ? styles.priorityActive : styles.priorityBtn}
-        >
-          Select parishes
-        </button>
-      </div>
-
-      {!allShelters && parishes.length > 0 && (
-        <div style={styles.parishGrid}>
-          {parishes.map(p => (
-            <label key={p} style={styles.parishLabel}>
-              <input
-                type="checkbox"
-                checked={selectedParishes.has(p)}
-                onChange={() => toggleParish(p)}
-              />
-              <span style={{ marginLeft: 4 }}>{p}</span>
-            </label>
-          ))}
-        </div>
-      )}
-
-      {/* Result banner */}
-      {result && (
-        <div style={{
-          ...styles.resultBanner,
-          color: result.type === 'success' ? '#15803d' : '#dc2626',
-          background: result.type === 'success' ? '#f0fdf4' : '#fef2f2',
-          border: `1px solid ${result.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
-        }}>
-          {result.text}
-        </div>
-      )}
-
-      {/* Send button */}
+    <div style={styles.wrapper} ref={panelRef}>
       <button
-        onClick={handleSend}
-        disabled={!message.trim() || sending || (!allShelters && selectedParishes.size === 0)}
-        style={{
-          ...styles.sendBtn,
-          opacity: !message.trim() || sending ? 0.5 : 1,
-        }}
+        onClick={() => setOpen(prev => !prev)}
+        style={styles.triggerBtn}
+        title="Send broadcast"
       >
-        {sending ? 'Sending...' : 'Send broadcast'}
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 2L11 13" />
+          <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+        </svg>
       </button>
 
-      {/* Recent broadcasts */}
-      {recentBroadcasts.length > 0 && (
-        <div style={styles.recentSection}>
-          <p style={styles.recentTitle}>Recent broadcasts</p>
-          {recentBroadcasts.map(b => (
-            <div key={b.id} style={styles.recentItem}>
-              <span style={{
-                ...styles.recentPriority,
-                background: b.priority === 'CRITICAL' ? '#fef2f2' : '#fffbeb',
-                color: b.priority === 'CRITICAL' ? '#dc2626' : '#92400e',
-              }}>
-                {b.priority}
-              </span>
-              <span style={styles.recentMsg}>{b.message.slice(0, 80)}{b.message.length > 80 ? '...' : ''}</span>
-              <span style={styles.recentTime}>{formatTime(b.createdAt)}</span>
+      {open && (
+        <div style={styles.dropdown}>
+          <div style={styles.header}>
+            <h3 style={styles.title}>Broadcast message</h3>
+            <button onClick={() => setOpen(false)} style={styles.closeBtn}>&times;</button>
+          </div>
+
+          <textarea
+            value={message}
+            onChange={e => setMessage(e.target.value.slice(0, 500))}
+            placeholder="Type your message to shelter managers..."
+            rows={3}
+            style={styles.textarea}
+          />
+          <div style={styles.charCount}>{message.length}/500</div>
+
+          {/* Priority toggle */}
+          <div style={styles.row}>
+            <span style={styles.label}>Priority:</span>
+            <button
+              onClick={() => setPriority('HIGH')}
+              style={priority === 'HIGH' ? styles.priorityActive : styles.priorityBtn}
+            >
+              HIGH
+            </button>
+            <button
+              onClick={() => setPriority('CRITICAL')}
+              style={{
+                ...(priority === 'CRITICAL' ? styles.priorityActive : styles.priorityBtn),
+                ...(priority === 'CRITICAL' ? { background: '#dc2626', borderColor: '#dc2626' } : {}),
+              }}
+            >
+              CRITICAL
+            </button>
+          </div>
+
+          {/* Parish targeting */}
+          <div style={styles.row}>
+            <span style={styles.label}>Target:</span>
+            <button
+              onClick={() => setAllShelters(true)}
+              style={allShelters ? styles.priorityActive : styles.priorityBtn}
+            >
+              All shelters
+            </button>
+            <button
+              onClick={() => setAllShelters(false)}
+              style={!allShelters ? styles.priorityActive : styles.priorityBtn}
+            >
+              Select parishes
+            </button>
+          </div>
+
+          {!allShelters && parishes.length > 0 && (
+            <div style={styles.parishGrid}>
+              {parishes.map(p => (
+                <label key={p} style={styles.parishLabel}>
+                  <input
+                    type="checkbox"
+                    checked={selectedParishes.has(p)}
+                    onChange={() => toggleParish(p)}
+                  />
+                  <span style={{ marginLeft: 4 }}>{p}</span>
+                </label>
+              ))}
             </div>
-          ))}
+          )}
+
+          {/* Result banner */}
+          {result && (
+            <div style={{
+              ...styles.resultBanner,
+              color: result.type === 'success' ? '#15803d' : '#dc2626',
+              background: result.type === 'success' ? '#f0fdf4' : '#fef2f2',
+              border: `1px solid ${result.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
+            }}>
+              {result.text}
+            </div>
+          )}
+
+          {/* Send button */}
+          <button
+            onClick={handleSend}
+            disabled={!message.trim() || sending || (!allShelters && selectedParishes.size === 0)}
+            style={{
+              ...styles.sendBtn,
+              opacity: !message.trim() || sending ? 0.5 : 1,
+            }}
+          >
+            {sending ? 'Sending...' : 'Send broadcast'}
+          </button>
+
+          {/* Recent broadcasts */}
+          {recentBroadcasts.length > 0 && (
+            <div style={styles.recentSection}>
+              <p style={styles.recentTitle}>Recent broadcasts</p>
+              {recentBroadcasts.map(b => (
+                <div key={b.id} style={styles.recentItem}>
+                  <span style={{
+                    ...styles.recentPriority,
+                    background: b.priority === 'CRITICAL' ? '#fef2f2' : '#fffbeb',
+                    color: b.priority === 'CRITICAL' ? '#dc2626' : '#92400e',
+                  }}>
+                    {b.priority}
+                  </span>
+                  <span style={styles.recentMsg}>{b.message.slice(0, 80)}{b.message.length > 80 ? '...' : ''}</span>
+                  <span style={styles.recentTime}>{formatTime(b.createdAt)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -204,26 +219,32 @@ const formatTime = (iso: string): string => {
 };
 
 const styles: Record<string, React.CSSProperties> = {
-  collapsed: {
-    display: 'flex',
+  wrapper: {
+    position: 'relative',
   },
-  openBtn: {
+  triggerBtn: {
     display: 'flex',
     alignItems: 'center',
-    padding: '10px 20px',
-    fontSize: 14,
-    fontWeight: 600,
-    color: '#fff',
-    background: '#1e293b',
-    border: 'none',
-    borderRadius: 8,
+    justifyContent: 'center',
+    width: 32,
+    height: 32,
+    color: '#e2e8f0',
+    background: 'transparent',
+    border: '1px solid #475569',
+    borderRadius: 6,
     cursor: 'pointer',
   },
-  card: {
+  dropdown: {
+    position: 'absolute',
+    top: '100%',
+    right: 0,
+    marginTop: 8,
+    width: 380,
     background: '#fff',
     borderRadius: 12,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-    padding: 20,
+    boxShadow: '0 8px 30px rgba(0,0,0,0.18)',
+    padding: 16,
+    zIndex: 100,
   },
   header: {
     display: 'flex',
@@ -232,13 +253,13 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 12,
   },
   title: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 700,
     color: '#1e293b',
     margin: 0,
   },
   closeBtn: {
-    fontSize: 22,
+    fontSize: 20,
     color: '#94a3b8',
     background: 'none',
     border: 'none',
@@ -330,23 +351,23 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
   recentSection: {
-    marginTop: 16,
+    marginTop: 12,
     borderTop: '1px solid #e2e8f0',
-    paddingTop: 12,
+    paddingTop: 10,
   },
   recentTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 600,
     color: '#94a3b8',
     textTransform: 'uppercase' as const,
     letterSpacing: '0.5px',
-    margin: '0 0 8px',
+    margin: '0 0 6px',
   },
   recentItem: {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    padding: '6px 0',
+    padding: '5px 0',
     fontSize: 13,
     borderBottom: '1px solid #f1f5f9',
   },

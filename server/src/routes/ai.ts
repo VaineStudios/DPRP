@@ -56,10 +56,11 @@ export const createAiRouter = (io: Server) => {
       return;
     }
 
-    // Fetch all shelters with their latest update
+    // Fetch all shelters with their latest update for this event
     const shelters = await prisma.shelter.findMany({
       include: {
         updates: {
+          where: { disasterEventId },
           orderBy: { createdAt: 'desc' },
           take: 1,
         },

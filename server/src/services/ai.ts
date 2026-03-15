@@ -42,7 +42,42 @@ const stripCodeFences = (text: string): string => {
   return match ? match[1].trim() : trimmed;
 };
 
+const OFFLINE_THRESHOLD_MS = 30 * 60 * 1000;
+
+const formatTimeSince = (date: Date | string): string => {
+  const ms = Date.now() - new Date(date).getTime();
+  const mins = Math.floor(ms / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+};
+
 const formatShelterData = (shelters: ShelterWithUpdate[]): string => {
+  // Compute network-level summary
+  const withUpdates = shelters.filter(s => s.latestUpdate);
+  const online = withUpdates.filter(s => {
+    const age = Date.now() - new Date(s.latestUpdate!.createdAt).getTime();
+    return age <= OFFLINE_THRESHOLD_MS;
+  });
+  const critical = withUpdates.filter(s => s.latestUpdate!.capacityLevel >= 4);
+  const resourceWarnings = withUpdates.filter(s => {
+    const u = s.latestUpdate!;
+    return u.waterLevel <= 2 || u.foodLevel <= 2 || u.medicalLevel <= 2;
+  });
+  const avgCap = withUpdates.length > 0
+    ? Math.round((withUpdates.reduce((sum, s) => sum + s.latestUpdate!.capacityLevel, 0) / withUpdates.length / 5) * 100)
+    : 0;
+
+  const lines: string[] = [];
+  lines.push(`## Network Summary`);
+  lines.push(`- Total shelters in system: ${shelters.length}`);
+  lines.push(`- Shelters with reports: ${withUpdates.length} (${online.length} online, ${withUpdates.length - online.length} offline >30min)`);
+  lines.push(`- Critical capacity (4-5/5): ${critical.length} shelters`);
+  lines.push(`- Resource warnings (any resource ≤2/5): ${resourceWarnings.length} shelters`);
+  lines.push(`- Average capacity utilization: ${avgCap}%`);
+  lines.push(`- Shelters with no reports yet: ${shelters.length - withUpdates.length}`);
+
   // Group shelters by parish
   const byParish = new Map<string, ShelterWithUpdate[]>();
   for (const s of shelters) {
@@ -51,19 +86,23 @@ const formatShelterData = (shelters: ShelterWithUpdate[]): string => {
     byParish.set(s.parish, list);
   }
 
-  const lines: string[] = [];
   for (const [parish, parishShelters] of byParish) {
-    lines.push(`\n## ${parish} (${parishShelters.length} shelters)`);
+    const parishReporting = parishShelters.filter(s => s.latestUpdate);
+    lines.push(`\n## ${parish} (${parishShelters.length} shelters, ${parishReporting.length} reporting)`);
     for (const s of parishShelters) {
       const u = s.latestUpdate;
+      const capInfo = s.maxCapacity ? `, Max capacity: ${s.maxCapacity} people` : '';
+      const typeInfo = s.facilityType ? ` [${s.facilityType}]` : '';
       if (u) {
+        const age = Date.now() - new Date(u.createdAt).getTime();
+        const offlineTag = age > OFFLINE_THRESHOLD_MS ? ' [OFFLINE]' : '';
         lines.push(
-          `- ${s.name} (ID: ${s.id}): Capacity ${u.capacityLevel}/5, Water ${u.waterLevel}/5, Food ${u.foodLevel}/5, Medical ${u.medicalLevel}/5` +
+          `- ${s.name}${typeInfo} (ID: ${s.id}${capInfo}): Capacity ${u.capacityLevel}/5, Water ${u.waterLevel}/5, Food ${u.foodLevel}/5, Medical ${u.medicalLevel}/5` +
           (u.notes ? ` — "${u.notes}"` : '') +
-          ` (updated ${u.createdAt instanceof Date ? u.createdAt.toISOString() : u.createdAt})`
+          ` (updated ${formatTimeSince(u.createdAt)})${offlineTag}`
         );
       } else {
-        lines.push(`- ${s.name} (ID: ${s.id}): No recent updates`);
+        lines.push(`- ${s.name}${typeInfo} (ID: ${s.id}${capInfo}): No reports submitted`);
       }
     }
   }
@@ -81,9 +120,17 @@ You speak with authority as the platform's built-in intelligence system. You don
 Your recommendations are directives, not suggestions. You reference specific shelter names, parishes, and data points. You are precise, actionable, and urgent when the situation demands it.
 
 You are analyzing shelter data during ${disasterEvent.name} (Category ${disasterEvent.category ?? 'N/A'}).
+Affected parishes: ${disasterEvent.affectedParishes.join(', ')}
 
 Current shelter network status:
 ${formatShelterData(shelterData)}
+
+IMPORTANT GUIDELINES:
+- Reference the Network Summary statistics and specific shelter data points in your reasoning.
+- Shelters marked [OFFLINE] still need aid — their last reported status is still valid until a new update changes it. Factor offline shelters into your analysis.
+- Use max capacity numbers (when available) to assess how many people may be affected.
+- Prioritize shelters with capacity 5/5 or any resource at 1/5 as highest urgency.
+- Consider parish-level patterns — if multiple shelters in one parish are critical, that parish needs coordinated response.
 
 Based on this data, provide your top 3-5 prioritized recommendations.
 For each recommendation, return JSON:

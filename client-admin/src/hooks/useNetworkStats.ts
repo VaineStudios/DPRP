@@ -18,6 +18,7 @@ export interface ParishStat {
 export interface NetworkStats {
   totalShelters: number;
   reportingShelters: number;
+  onlineCount: number;
   criticalCount: number;
   resourceWarningCount: number;
   avgCapacityPercent: number;
@@ -31,8 +32,10 @@ export const useNetworkStats = (
 ): NetworkStats => {
   return useMemo(() => {
     const total = shelters.length;
-    const reporting = shelters.filter(s => s.latestUpdate && !isOffline(s));
+    // "reporting" = has submitted at least one update (persists even when offline)
+    const reporting = shelters.filter(s => s.latestUpdate);
     const reportingCount = reporting.length;
+    const onlineCount = reporting.filter(s => !isOffline(s)).length;
 
     const criticalCount = reporting.filter(
       s => s.latestUpdate!.capacityLevel >= 4,
@@ -60,7 +63,7 @@ export const useNetworkStats = (
     const parishStats: ParishStat[] = affected
       .map(parish => {
         const parishShelters = shelters.filter(s => s.parish === parish);
-        const parishReporting = parishShelters.filter(s => s.latestUpdate && !isOffline(s));
+        const parishReporting = parishShelters.filter(s => s.latestUpdate);
         const parishCritical = parishReporting.filter(s => s.latestUpdate!.capacityLevel >= 4);
         const parishOffline = parishShelters.filter(s => isOffline(s));
 
@@ -114,6 +117,7 @@ export const useNetworkStats = (
     return {
       totalShelters: total,
       reportingShelters: reportingCount,
+      onlineCount,
       criticalCount,
       resourceWarningCount,
       avgCapacityPercent,

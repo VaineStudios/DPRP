@@ -46,7 +46,7 @@ const StatCards = ({ stats }: StatCardsProps) => {
 
   const cards = [
     {
-      label: 'Shelters reporting',
+      label: 'Shelters reported',
       value: `${animReporting} / ${stats.totalShelters}`,
       accent: '#0d9488',
       valueColor: '#1e293b',

@@ -7,7 +7,6 @@ import StatCards from '../components/dashboard/StatCards';
 import ParishBreakdown from '../components/dashboard/ParishBreakdown';
 import CriticalAlerts from '../components/dashboard/CriticalAlerts';
 import CapacityTrend from '../components/dashboard/CapacityTrend';
-import BroadcastComposer from '../components/BroadcastComposer';
 import ToastContainer from '../components/Toast';
 import type { ToastItem } from '../components/Toast';
 import Preparedness from './Preparedness';
@@ -18,6 +17,7 @@ import { useNetworkStats } from '../hooks/useNetworkStats';
 import { useAlerts } from '../hooks/useAlerts';
 import { useCapacityTrend } from '../hooks/useCapacityTrend';
 import { PARISH_CENTROIDS } from '../constants/parishes';
+import type { NotificationItem } from '../components/NotificationPanel';
 import type { UserResponse, ShelterUpdateEvent } from '../api/client';
 
 interface DashboardProps {
@@ -33,6 +33,8 @@ const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
   const { shelters, loading, error, updateShelter, newlyActivatedIds, clearNewlyActivated } =
     useShelters(true, activeEvent?.id);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null);
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'response' | 'preparedness'>('response');
@@ -68,17 +70,21 @@ const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
 
     updateShelter(event.shelterId, event.update);
 
-    const toast: ToastItem = {
-      id: String(++toastIdCounter),
+    const now = Date.now();
+    const id = String(++toastIdCounter);
+    const item = {
+      id,
       shelterId: event.shelterId,
       shelterName: event.shelter.name,
       capacityLevel: event.update.capacityLevel,
       waterLevel: event.update.waterLevel,
       lat: event.shelter.lat ?? 0,
       lng: event.shelter.lng ?? 0,
-      timestamp: Date.now(),
+      timestamp: now,
     };
-    setToasts(prev => [...prev.slice(-2), toast]);
+    setToasts(prev => [...prev.slice(-2), item]);
+    setNotifications(prev => [item, ...prev].slice(0, 50));
+    setUnreadCount(prev => prev + 1);
   }, [updateShelter, activeEvent]);
 
   useSocket(token, handleShelterUpdate);
@@ -112,6 +118,14 @@ const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
   const handleDismissToast = useCallback((id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
+
+  const handleNotificationsOpen = useCallback(() => {
+    setUnreadCount(0);
+  }, []);
+
+  const handleNotificationClick = useCallback((shelterId: string, lat: number, lng: number) => {
+    handleFlyToShelter(lat, lng, shelterId);
+  }, [handleFlyToShelter]);
 
   const handlePanToParish = useCallback((parish: string) => {
     const centroid = PARISH_CENTROIDS[parish];
@@ -153,6 +167,10 @@ const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         irisAnalyzing={irisAnalyzing}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        onNotificationsOpen={handleNotificationsOpen}
+        onNotificationClick={handleNotificationClick}
       />
 
       {activeTab === 'response' ? (
@@ -160,9 +178,6 @@ const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
           <div style={styles.content}>
             {/* Stat Cards Row */}
             <StatCards stats={stats} />
-
-            {/* Broadcast Composer */}
-            <BroadcastComposer activeEvent={activeEvent} />
 
             {/* Map + IRIS Panel */}
             <div
