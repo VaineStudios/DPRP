@@ -2,7 +2,7 @@ name: Deploy DPRP
 
 on:
   push:
-    branches: [main]
+    branches: [dev]
   workflow_dispatch:  # Allows manual trigger from GitHub UI
 
 env:
