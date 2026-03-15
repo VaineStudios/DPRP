@@ -132,31 +132,31 @@ const StatRow = ({ label, value, highlight }: { label: string; value: string; hi
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: 12,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    boxShadow: 'var(--shadow)',
     padding: '20px 24px',
   },
   title: {
     fontSize: 18,
     fontWeight: 700,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     margin: '0 0 2px',
   },
   subtitle: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     margin: '0 0 16px',
   },
   loadingText: {
     fontSize: 13,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     textAlign: 'center' as const,
     padding: '20px 0',
   },
   emptyText: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     textAlign: 'center' as const,
     padding: '20px 0',
     fontStyle: 'italic',
@@ -167,14 +167,14 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 12,
   },
   eventCard: {
-    background: '#f8fafc',
-    border: '1px solid #e2e8f0',
+    background: 'var(--bg-card-alt)',
+    border: '1px solid var(--border)',
     borderRadius: 8,
     padding: '14px 16px',
   },
   similarCard: {
     border: '2px solid #3b82f6',
-    background: '#f0f9ff',
+    background: 'var(--bg-card-hover)',
   },
   similarBadge: {
     display: 'inline-block',
@@ -191,14 +191,14 @@ const styles: Record<string, React.CSSProperties> = {
   eventName: {
     fontSize: 16,
     fontWeight: 700,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     margin: '0 0 4px',
   },
   eventMeta: {
     display: 'flex',
     gap: 10,
     fontSize: 12,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     marginBottom: 10,
   },
   statsGrid: {
@@ -210,16 +210,16 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     justifyContent: 'space-between',
     padding: '4px 0',
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid var(--border-light)',
   },
   statLabel: {
     fontSize: 12,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
   },
   statValue: {
     fontSize: 12,
     fontWeight: 600,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
   },
 };
 

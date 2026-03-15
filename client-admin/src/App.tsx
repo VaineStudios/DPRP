@@ -8,7 +8,7 @@ const App = () => {
   if (isLoading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <p style={{ fontSize: 18, color: '#64748b' }}>Loading...</p>
+        <p style={{ fontSize: 18, color: 'var(--text-secondary)' }}>Loading...</p>
       </div>
     );
   }

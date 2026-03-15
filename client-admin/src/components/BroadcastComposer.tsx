@@ -85,8 +85,9 @@ const BroadcastComposer = ({ activeEvent }: BroadcastComposerProps) => {
         title="Send broadcast"
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 2L11 13" />
-          <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+          <path d="M18 8a6 6 0 0 1 0 8" />
+          <path d="M21 5a10 10 0 0 1 0 14" />
+          <path d="M11 5L6 9H2v6h4l5 4V5z" />
         </svg>
       </button>
 
@@ -240,11 +241,11 @@ const styles: Record<string, React.CSSProperties> = {
     right: 0,
     marginTop: 8,
     width: 380,
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: 12,
-    boxShadow: '0 8px 30px rgba(0,0,0,0.18)',
+    boxShadow: 'var(--shadow-lg)',
     padding: 16,
-    zIndex: 100,
+    zIndex: 10000,
   },
   header: {
     display: 'flex',
@@ -255,12 +256,12 @@ const styles: Record<string, React.CSSProperties> = {
   title: {
     fontSize: 15,
     fontWeight: 700,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     margin: 0,
   },
   closeBtn: {
     fontSize: 20,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     background: 'none',
     border: 'none',
     cursor: 'pointer',
@@ -271,16 +272,18 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     padding: '10px 12px',
     fontSize: 14,
-    border: '1px solid #e2e8f0',
+    border: '1px solid var(--border)',
     borderRadius: 8,
     resize: 'none' as const,
     fontFamily: 'inherit',
     boxSizing: 'border-box' as const,
+    background: 'var(--bg-input)',
+    color: 'var(--text-primary)',
   },
   charCount: {
     textAlign: 'right' as const,
     fontSize: 12,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     marginTop: 2,
     marginBottom: 8,
   },
@@ -293,16 +296,16 @@ const styles: Record<string, React.CSSProperties> = {
   label: {
     fontSize: 13,
     fontWeight: 600,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     minWidth: 60,
   },
   priorityBtn: {
     padding: '4px 12px',
     fontSize: 12,
     fontWeight: 600,
-    color: '#64748b',
-    background: '#f8fafc',
-    border: '1px solid #e2e8f0',
+    color: 'var(--text-secondary)',
+    background: 'var(--bg-card-alt)',
+    border: '1px solid var(--border)',
     borderRadius: 4,
     cursor: 'pointer',
   },
@@ -322,14 +325,14 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 8,
     marginBottom: 12,
     padding: '8px 12px',
-    background: '#f8fafc',
+    background: 'var(--bg-card-alt)',
     borderRadius: 8,
   },
   parishLabel: {
     display: 'flex',
     alignItems: 'center',
     fontSize: 13,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     cursor: 'pointer',
   },
   resultBanner: {
@@ -352,13 +355,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   recentSection: {
     marginTop: 12,
-    borderTop: '1px solid #e2e8f0',
+    borderTop: '1px solid var(--border)',
     paddingTop: 10,
   },
   recentTitle: {
     fontSize: 11,
     fontWeight: 600,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     textTransform: 'uppercase' as const,
     letterSpacing: '0.5px',
     margin: '0 0 6px',
@@ -369,7 +372,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 8,
     padding: '5px 0',
     fontSize: 13,
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid var(--border-light)',
   },
   recentPriority: {
     padding: '1px 6px',
@@ -380,14 +383,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   recentMsg: {
     flex: 1,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     minWidth: 0,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap' as const,
   },
   recentTime: {
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     fontSize: 12,
     flexShrink: 0,
   },

@@ -180,31 +180,31 @@ const ResourceBar = ({ label, hours, maxHours }: { label: string; hours: number;
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: 12,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    boxShadow: 'var(--shadow)',
     padding: '20px 24px',
   },
   title: {
     fontSize: 18,
     fontWeight: 700,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     margin: '0 0 2px',
   },
   subtitle: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     margin: '0 0 16px',
   },
   loadingText: {
     fontSize: 13,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     textAlign: 'center' as const,
     padding: '20px 0',
   },
   emptyText: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     textAlign: 'center' as const,
     padding: '20px 0',
   },
@@ -215,14 +215,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   section: {
     padding: '16px',
-    background: '#f8fafc',
+    background: 'var(--bg-card-alt)',
     borderRadius: 8,
-    border: '1px solid #e2e8f0',
+    border: '1px solid var(--border)',
   },
   sectionTitle: {
     fontSize: 11,
     fontWeight: 700,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     letterSpacing: '0.5px',
     margin: '0 0 12px',
     textTransform: 'uppercase' as const,
@@ -236,19 +236,19 @@ const styles: Record<string, React.CSSProperties> = {
   },
   metricLabel: {
     fontSize: 13,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
   },
   metricValue: {
     fontSize: 13,
     fontWeight: 600,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
   },
   barWrap: {
     marginTop: 10,
   },
   barTrack: {
     height: 20,
-    background: '#e2e8f0',
+    background: 'var(--border)',
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 6,
@@ -276,14 +276,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   resourceLabel: {
     fontSize: 13,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     width: 110,
     flexShrink: 0,
   },
   resourceBarTrack: {
     flex: 1,
     height: 14,
-    background: '#e2e8f0',
+    background: 'var(--border)',
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -301,7 +301,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   basisText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     textAlign: 'center' as const,
     fontStyle: 'italic',
     margin: 0,

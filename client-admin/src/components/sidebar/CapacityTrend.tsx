@@ -117,7 +117,7 @@ const CapacityTrend = ({ shelters }: CapacityTrendProps) => {
           borderWidth: 2,
           pointRadius: 3,
           pointBackgroundColor: pointColors,
-          pointBorderColor: '#1e293b',
+          pointBorderColor: 'var(--sidebar-card)',
           pointBorderWidth: 1,
           pointHoverRadius: 5,
           fill: true,
@@ -206,7 +206,7 @@ const styles: Record<string, React.CSSProperties> = {
   chartWrap: {
     width: 260,
     height: 100,
-    background: '#0f172a',
+    background: 'var(--sidebar-bg)',
     borderRadius: 4,
   },
 };

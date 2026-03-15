@@ -68,7 +68,7 @@ const ParishBreakdown = ({ shelters, activeEvent, onParishClick }: ParishBreakdo
           key={p.name}
           style={{
             ...styles.row,
-            background: hoveredParish === p.name ? '#1e293b' : 'transparent',
+            background: hoveredParish === p.name ? 'var(--sidebar-card)' : 'transparent',
           }}
           onClick={() => onParishClick(p.name)}
           onMouseEnter={() => setHoveredParish(p.name)}
@@ -107,7 +107,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   row: {
     padding: '8px 4px',
-    borderBottom: '1px solid #1e293b',
+    borderBottom: '1px solid var(--sidebar-card)',
     cursor: 'pointer',
     borderRadius: 4,
     transition: 'background 0.15s',
@@ -135,7 +135,7 @@ const styles: Record<string, React.CSSProperties> = {
   barBg: {
     width: '100%',
     height: 4,
-    background: '#334155',
+    background: 'var(--header-border)',
     borderRadius: 2,
     marginBottom: 4,
     overflow: 'hidden',

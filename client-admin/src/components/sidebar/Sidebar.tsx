@@ -104,7 +104,7 @@ const styles: Record<string, React.CSSProperties> = {
   sidebar: {
     width: 280,
     flexShrink: 0,
-    background: '#0f172a',
+    background: 'var(--sidebar-bg)',
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
@@ -116,7 +116,7 @@ const styles: Record<string, React.CSSProperties> = {
   collapsed: {
     width: 40,
     flexShrink: 0,
-    background: '#0f172a',
+    background: 'var(--sidebar-bg)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -131,8 +131,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#1e293b',
-    border: '1px solid #334155',
+    background: 'var(--sidebar-card)',
+    border: '1px solid var(--header-border)',
     borderRadius: '50%',
     cursor: 'pointer',
     marginBottom: 8,
@@ -146,8 +146,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#1e293b',
-    border: '1px solid #334155',
+    background: 'var(--sidebar-card)',
+    border: '1px solid var(--header-border)',
     borderRadius: '50%',
     cursor: 'pointer',
     zIndex: 2,
@@ -182,7 +182,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   divider: {
     height: 1,
-    background: '#1e293b',
+    background: 'var(--sidebar-card)',
     margin: '0 12px',
   },
 };

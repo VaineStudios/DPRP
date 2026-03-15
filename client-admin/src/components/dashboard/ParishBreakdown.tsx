@@ -39,8 +39,8 @@ const ParishBreakdown = ({ parishStats, onParishClick }: ParishBreakdownProps) =
             key={p.parish}
             style={{
               ...styles.row,
-              background: hoveredParish === p.parish ? '#f8fafc' : 'transparent',
-              borderBottom: i < parishStats.length - 1 ? '1px solid #f1f5f9' : 'none',
+              background: hoveredParish === p.parish ? 'var(--bg-card-hover)' : 'transparent',
+              borderBottom: i < parishStats.length - 1 ? '1px solid var(--border-light)' : 'none',
             }}
             onClick={() => onParishClick(p.parish)}
             onMouseEnter={() => setHoveredParish(p.parish)}
@@ -73,9 +73,9 @@ const ParishBreakdown = ({ parishStats, onParishClick }: ParishBreakdownProps) =
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: 12,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    boxShadow: 'var(--shadow)',
     overflow: 'hidden',
   },
   header: {
@@ -84,17 +84,19 @@ const styles: Record<string, React.CSSProperties> = {
   title: {
     fontSize: 16,
     fontWeight: 700,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     margin: 0,
   },
   subtitle: {
     fontSize: 13,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     margin: '2px 0 0',
   },
   list: {
     display: 'flex',
     flexDirection: 'column',
+    maxHeight: 420,
+    overflowY: 'auto' as const,
   },
   row: {
     padding: '10px 20px',
@@ -110,7 +112,7 @@ const styles: Record<string, React.CSSProperties> = {
   parishName: {
     fontSize: 14,
     fontWeight: 600,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
   },
   critBadge: {
     fontSize: 11,
@@ -124,7 +126,7 @@ const styles: Record<string, React.CSSProperties> = {
   barBg: {
     width: '100%',
     height: 6,
-    background: '#f1f5f9',
+    background: 'var(--border-light)',
     borderRadius: 3,
     marginBottom: 6,
     overflow: 'hidden',
@@ -136,11 +138,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
   rowSub: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
   },
   empty: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     textAlign: 'center' as const,
     padding: '24px 20px',
   },

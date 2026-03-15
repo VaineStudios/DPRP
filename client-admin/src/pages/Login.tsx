@@ -78,14 +78,14 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: '100vh',
-    background: '#f1f5f9',
+    background: 'var(--bg-page)',
   },
   card: {
     width: 400,
     padding: 40,
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: 12,
-    boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+    boxShadow: 'var(--shadow-md)',
   },
   header: {
     textAlign: 'center',
@@ -94,13 +94,13 @@ const styles: Record<string, React.CSSProperties> = {
   title: {
     fontSize: 40,
     fontWeight: 800,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     letterSpacing: '-1px',
     lineHeight: 1,
   },
   subtitle: {
     fontSize: 16,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     marginTop: 4,
   },
   form: {
@@ -116,21 +116,23 @@ const styles: Record<string, React.CSSProperties> = {
   label: {
     fontSize: 14,
     fontWeight: 600,
-    color: '#475569',
+    color: 'var(--text-muted)',
   },
   input: {
     padding: '10px 12px',
     fontSize: 14,
-    border: '1px solid #cbd5e1',
+    border: '1px solid var(--border-input)',
     borderRadius: 8,
     outline: 'none',
+    background: 'var(--bg-input)',
+    color: 'var(--text-primary)',
   },
   error: {
     color: '#dc2626',
     fontSize: 14,
     textAlign: 'center',
     padding: '8px 12px',
-    background: '#fef2f2',
+    background: 'var(--bg-error)',
     borderRadius: 8,
   },
   button: {

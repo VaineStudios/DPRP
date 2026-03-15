@@ -3,6 +3,7 @@ import { getPinColor } from '../utils/shelter';
 import BroadcastComposer from './BroadcastComposer';
 import NotificationPanel from './NotificationPanel';
 import type { NotificationItem } from './NotificationPanel';
+import ThemeToggle from './ThemeToggle';
 
 interface StatusBarProps {
   shelters: Shelter[];
@@ -83,6 +84,7 @@ const StatusBar = ({ shelters, user, onLogout, activeEvent, activeTab, onTabChan
           <span style={irisAnalyzing ? styles.irisAmberDot : styles.irisGreenDot} />
           {irisAnalyzing ? 'IRIS: Analyzing...' : 'IRIS: Active'}
         </span>
+        <ThemeToggle />
         <BroadcastComposer activeEvent={activeEvent} />
         <NotificationPanel
           notifications={notifications}
@@ -112,12 +114,12 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     padding: '0 20px',
     height: 48,
-    background: '#1e293b',
+    background: 'var(--header-bg)',
     color: '#fff',
     flexShrink: 0,
     position: 'sticky' as const,
     top: 0,
-    zIndex: 50,
+    zIndex: 1000,
   },
   left: {
     display: 'flex',
