@@ -1,0 +1,11 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "cd client-admin && npm ci && npm run build && cd ../client-resident && npm ci && tsc -b && npx vite build --base /resident/ && cd ../client-shelter && npm ci && tsc -b && npx vite build --base /shelter/ && cd ../server && npx prisma generate && npm run build && mkdir -p public && cp -r ../client-admin/dist public/client-admin && cp -r ../client-resident/dist public/client-resident && cp -r ../client-shelter/dist public/client-shelter"
+  },
+  "deploy": {
+    "startCommand": "cd server && npx prisma migrate deploy; node dist/index.js",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
