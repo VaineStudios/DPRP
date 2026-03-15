@@ -51,7 +51,8 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -T 10 -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          echo -e "Host *\n  ConnectTimeout 15\n  ServerAliveInterval 10\n  ServerAliveCountMax 3" >> ~/.ssh/config
 
       # ── Deploy to EC2 ─────────────────────────────────────
       - name: Deploy server
