@@ -4,15 +4,16 @@
   "description": "Disaster Preparedness & Response Platform for Jamaica",
   "private": true,
   "scripts": {
-    "dev": "concurrently -n server,shelter,admin -c blue,green,magenta \"npm run dev --prefix server\" \"npm run dev --prefix client-shelter\" \"npm run dev --prefix client-admin\"",
+    "dev": "concurrently -n server,shelter,admin,resident -c blue,green,magenta,red \"npm run dev --prefix server\" \"npm run dev --prefix client-shelter\" \"npm run dev --prefix client-admin\" \"npm run dev --prefix client-resident\"",
     "dev:server": "npm run dev --prefix server",
     "dev:shelter": "npm run dev --prefix client-shelter",
     "dev:admin": "npm run dev --prefix client-admin",
-    "build": "npm run build --prefix server && npm run build --prefix client-shelter && npm run build --prefix client-admin",
+    "dev:resident": "npm run dev --prefix client-resident",
+    "build": "npm run build --prefix server && npm run build --prefix client-shelter && npm run build --prefix client-admin && npm run build --prefix client-resident",
     "seed": "npm run seed --prefix server",
     "db:migrate": "npm run db:migrate --prefix server",
     "db:studio": "npm run db:studio --prefix server",
-    "install:all": "npm install --prefix server && npm install --prefix client-shelter && npm install --prefix client-admin"
+    "install:all": "npm install --prefix server && npm install --prefix client-shelter && npm install --prefix client-admin && npm install --prefix client-resident"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"
