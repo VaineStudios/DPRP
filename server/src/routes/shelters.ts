@@ -30,24 +30,46 @@ router.get('/', authenticate, asyncHandler(async (req: Request, res: Response): 
 
   // Full response for admin dashboard (all shelters with latest update)
   // When eventId is provided, only include updates for that disaster event
+  // When no eventId, return shelters without updates (no active event = no live data)
   const eventId = req.query.eventId as string | undefined;
 
-  const shelters = await prisma.shelter.findMany({
-    include: {
-      updates: {
-        orderBy: { createdAt: 'desc' },
-        take: 1,
-        ...(eventId ? { where: { disasterEventId: eventId } } : {}),
-        select: {
-          capacityLevel: true,
-          waterLevel: true,
-          foodLevel: true,
-          medicalLevel: true,
-          createdAt: true,
+  if (eventId) {
+    const shelters = await prisma.shelter.findMany({
+      include: {
+        updates: {
+          where: { disasterEventId: eventId },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: {
+            capacityLevel: true,
+            waterLevel: true,
+            foodLevel: true,
+            medicalLevel: true,
+            createdAt: true,
+          },
         },
       },
-    },
-  });
+    });
+
+    const result = shelters.map((s) => ({
+      id: s.id,
+      name: s.name,
+      parish: s.parish,
+      location: s.location,
+      facilityType: s.facilityType,
+      lat: s.lat,
+      lng: s.lng,
+      maxCapacity: s.maxCapacity,
+      status: s.status,
+      latestUpdate: s.updates[0] ?? null,
+    }));
+
+    res.json({ shelters: result });
+    return;
+  }
+
+  // No eventId — return shelters without any update data
+  const shelters = await prisma.shelter.findMany();
 
   const result = shelters.map((s) => ({
     id: s.id,
@@ -59,7 +81,7 @@ router.get('/', authenticate, asyncHandler(async (req: Request, res: Response): 
     lng: s.lng,
     maxCapacity: s.maxCapacity,
     status: s.status,
-    latestUpdate: s.updates[0] ?? null,
+    latestUpdate: null,
   }));
 
   res.json({ shelters: result });

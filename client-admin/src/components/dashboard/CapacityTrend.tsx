@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { useTheme } from '../../hooks/useTheme';
 import {
   Chart,
   LineElement,
@@ -29,9 +30,13 @@ const getPointColor = (value: number): string => {
   return '#ef4444';
 };
 
+const getCssVar = (name: string): string =>
+  getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
 const CapacityTrend = ({ dataPoints }: CapacityTrendProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart | null>(null);
+  const { theme } = useTheme();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -56,7 +61,7 @@ const CapacityTrend = ({ dataPoints }: CapacityTrendProps) => {
           borderWidth: 2.5,
           pointRadius: 4,
           pointBackgroundColor: pointColors,
-          pointBorderColor: '#fff',
+          pointBorderColor: getCssVar('--bg-card'),
           pointBorderWidth: 1.5,
           pointHoverRadius: 6,
           fill: true,
@@ -93,7 +98,7 @@ const CapacityTrend = ({ dataPoints }: CapacityTrendProps) => {
             display: true,
             grid: { display: false },
             ticks: {
-              color: '#94a3b8',
+              color: getCssVar('--text-secondary'),
               font: { size: 11 },
               maxTicksLimit: 6,
             },
@@ -105,13 +110,13 @@ const CapacityTrend = ({ dataPoints }: CapacityTrendProps) => {
             max: 100,
             grid: {
               color: (ctx) => {
-                if (ctx.tick.value === 40 || ctx.tick.value === 60) return '#e2e8f0';
+                if (ctx.tick.value === 40 || ctx.tick.value === 60) return getCssVar('--border');
                 return 'transparent';
               },
               lineWidth: 0.5,
             },
             ticks: {
-              color: '#94a3b8',
+              color: getCssVar('--text-secondary'),
               font: { size: 10 },
               stepSize: 20,
               callback: (value) => `${value}%`,
@@ -126,7 +131,7 @@ const CapacityTrend = ({ dataPoints }: CapacityTrendProps) => {
       chartRef.current?.destroy();
       chartRef.current = null;
     };
-  }, [dataPoints]);
+  }, [dataPoints, theme]);
 
   return (
     <div style={styles.card}>
@@ -143,9 +148,9 @@ const CapacityTrend = ({ dataPoints }: CapacityTrendProps) => {
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: 12,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    boxShadow: 'var(--shadow)',
     overflow: 'hidden',
   },
   header: {
@@ -154,12 +159,12 @@ const styles: Record<string, React.CSSProperties> = {
   title: {
     fontSize: 16,
     fontWeight: 700,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     margin: 0,
   },
   subtitle: {
     fontSize: 13,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     margin: '2px 0 0',
   },
   chartWrap: {

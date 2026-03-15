@@ -59,7 +59,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 11,
     fontWeight: 600,
     textTransform: 'uppercase' as const,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     letterSpacing: '0.5px',
     marginBottom: 4,
     display: 'block',
@@ -71,10 +71,10 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     padding: '8px 10px',
     fontSize: 13,
-    border: '1px solid #e2e8f0',
+    border: '1px solid var(--border)',
     borderRadius: 6,
-    background: '#fff',
-    color: '#1e293b',
+    background: 'var(--bg-input)',
+    color: 'var(--text-primary)',
     cursor: 'pointer',
   },
   detail: {
@@ -93,7 +93,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   meta: {
     fontSize: 12,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
   },
 };
 

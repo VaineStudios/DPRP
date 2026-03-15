@@ -73,13 +73,13 @@ const styles: Record<string, React.CSSProperties> = {
   name: {
     fontSize: 16,
     fontWeight: 700,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     margin: 0,
     lineHeight: 1.3,
   },
   meta: {
     fontSize: 12,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     margin: '2px 0 10px',
   },
   grid: {
@@ -93,7 +93,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   statLabel: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     fontWeight: 600,
     textTransform: 'uppercase',
   },
@@ -103,13 +103,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   notes: {
     fontSize: 12,
-    color: '#475569',
+    color: 'var(--text-muted)',
     marginTop: 8,
     fontStyle: 'italic',
   },
   time: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     marginTop: 8,
   },
   offlineWarning: {
@@ -118,12 +118,12 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     marginTop: 8,
     padding: '4px 8px',
-    background: '#fef2f2',
+    background: 'var(--bg-error)',
     borderRadius: 4,
   },
   noData: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     fontStyle: 'italic',
     marginTop: 8,
   },

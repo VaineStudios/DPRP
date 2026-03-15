@@ -154,9 +154,9 @@ const styles: Record<string, React.CSSProperties> = {
     right: 0,
     marginTop: 8,
     width: 340,
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: 12,
-    boxShadow: '0 8px 30px rgba(0,0,0,0.18)',
+    boxShadow: 'var(--shadow-lg)',
     overflow: 'hidden',
     zIndex: 100,
   },
@@ -165,16 +165,16 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '12px 16px',
-    borderBottom: '1px solid #e2e8f0',
+    borderBottom: '1px solid var(--border)',
   },
   headerTitle: {
     fontSize: 14,
     fontWeight: 700,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
   },
   headerCount: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
   },
   list: {
     maxHeight: 360,
@@ -182,7 +182,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   empty: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     textAlign: 'center' as const,
     padding: '24px 16px',
     margin: 0,
@@ -193,7 +193,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '10px 16px',
     background: 'transparent',
     border: 'none',
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid var(--border-light)',
     cursor: 'pointer',
     textAlign: 'left' as const,
   },
@@ -206,11 +206,11 @@ const styles: Record<string, React.CSSProperties> = {
   itemName: {
     fontSize: 13,
     fontWeight: 600,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
   },
   itemTime: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
   },
   itemMetrics: {
     display: 'flex',

@@ -51,29 +51,32 @@ const Preparedness = ({ disasters, onPanToParish }: PreparednessProps) => {
         {/* Row 1: Event Overview + Resource Gap Analysis */}
         <div style={{
           ...styles.twoCol,
-          gridTemplateColumns: isWide ? '1fr 1fr' : '1fr',
+          gridTemplateColumns: isWide ? '2fr 3fr' : '1fr',
         }}>
           <EventOverview event={selectedEvent} />
           <ResourceGapAnalysis approachingEvent={selectedEvent} />
         </div>
 
-        {/* Full width: Vulnerability Assessment */}
-        <VulnerabilityMap
-          approachingEvent={selectedEvent}
-          onParishClick={onPanToParish}
-        />
+        {/* Row 2: Vulnerability + Historical */}
+        <div style={{
+          ...styles.twoCol,
+          gridTemplateColumns: isWide ? '3fr 2fr' : '1fr',
+        }}>
+          <VulnerabilityMap
+            approachingEvent={selectedEvent}
+            onParishClick={onPanToParish}
+          />
+          <HistoricalComparison approachingEvent={selectedEvent} />
+        </div>
 
-        {/* Row 2: Historical Comparison + IRIS Forecaster */}
+        {/* Row 3: IRIS Forecaster + Scenario Modeler */}
         <div style={{
           ...styles.twoCol,
           gridTemplateColumns: isWide ? '1fr 1fr' : '1fr',
         }}>
-          <HistoricalComparison approachingEvent={selectedEvent} />
           <IrisForecaster selectedEvent={selectedEvent} />
+          <ScenarioModeler />
         </div>
-
-        {/* Full width: Scenario Modeler */}
-        <ScenarioModeler />
       </div>
     </div>
   );
@@ -82,10 +85,10 @@ const Preparedness = ({ disasters, onPanToParish }: PreparednessProps) => {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     flex: 1,
-    background: '#f1f5f9',
+    background: 'var(--bg-page)',
   },
   content: {
-    maxWidth: 1100,
+    maxWidth: 1400,
     margin: '0 auto',
     padding: '16px 24px 48px',
     display: 'flex',
@@ -102,24 +105,25 @@ const styles: Record<string, React.CSSProperties> = {
   headingText: {
     fontSize: 24,
     fontWeight: 700,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     margin: '0 0 2px',
   },
   headingSubtext: {
     fontSize: 14,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     margin: 0,
   },
   selectorInline: {
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: 10,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    boxShadow: 'var(--shadow)',
     padding: '10px 16px',
     minWidth: 220,
   },
   twoCol: {
     display: 'grid',
     gap: 16,
+    alignItems: 'start',
   },
 };
 

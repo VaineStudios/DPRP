@@ -209,9 +209,9 @@ const IrisForecaster = ({ selectedEvent }: IrisForecasterProps) => {
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: 12,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    boxShadow: 'var(--shadow)',
     padding: '20px 24px',
     borderTop: '3px solid #0ea5e9',
   },
@@ -231,7 +231,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   subtitle: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     margin: 0,
   },
   btn: {
@@ -249,8 +249,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '10px 24px',
     fontSize: 14,
     fontWeight: 600,
-    color: '#94a3b8',
-    background: '#f1f5f9',
+    color: 'var(--text-secondary)',
+    background: 'var(--bg-page)',
     border: 'none',
     borderRadius: 6,
     cursor: 'not-allowed',
@@ -270,8 +270,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   error: {
     padding: '12px 16px',
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
+    background: 'var(--bg-error)',
+    border: '1px solid var(--border-error)',
     borderRadius: 6,
     color: '#dc2626',
     fontSize: 13,
@@ -284,9 +284,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   section: {
     padding: '16px',
-    background: '#f8fafc',
+    background: 'var(--bg-card-alt)',
     borderRadius: 8,
-    border: '1px solid #e2e8f0',
+    border: '1px solid var(--border)',
   },
   sectionTitle: {
     fontSize: 13,
@@ -296,7 +296,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   sectionSubtext: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     margin: '0 0 12px',
   },
   predList: {
@@ -309,9 +309,9 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: 12,
     padding: '8px 12px',
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: 6,
-    border: '1px solid #e2e8f0',
+    border: '1px solid var(--border)',
   },
   predRank: {
     fontSize: 14,
@@ -328,16 +328,16 @@ const styles: Record<string, React.CSSProperties> = {
   predName: {
     fontSize: 14,
     fontWeight: 600,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
   },
   predTime: {
     fontSize: 12,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
   },
   predConfidence: {
     fontSize: 11,
     fontWeight: 600,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     textTransform: 'uppercase' as const,
     flexShrink: 0,
   },
@@ -348,9 +348,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   directiveCard: {
     padding: '10px 14px',
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: 6,
-    border: '1px solid #e2e8f0',
+    border: '1px solid var(--border)',
   },
   directiveHeader: {
     display: 'flex',
@@ -361,7 +361,7 @@ const styles: Record<string, React.CSSProperties> = {
   directiveResource: {
     fontSize: 13,
     fontWeight: 700,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     textTransform: 'capitalize' as const,
   },
   directiveQty: {
@@ -371,7 +371,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   directiveRationale: {
     fontSize: 13,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     margin: 0,
     lineHeight: 1.5,
   },
@@ -395,7 +395,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'flex-start',
     gap: 10,
     padding: '8px 0',
-    borderLeft: '2px solid #e2e8f0',
+    borderLeft: '2px solid var(--border)',
     paddingLeft: 16,
     position: 'relative' as const,
     marginLeft: -20,
@@ -407,23 +407,23 @@ const styles: Record<string, React.CSSProperties> = {
     width: 10,
     height: 10,
     borderRadius: '50%',
-    border: '2px solid #fff',
+    border: '2px solid var(--bg-card)',
   },
   timelineHour: {
     fontSize: 13,
     fontWeight: 700,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     width: 50,
     flexShrink: 0,
   },
   timelineEvent: {
     fontSize: 13,
-    color: '#475569',
+    color: 'var(--text-muted)',
     lineHeight: 1.4,
   },
   timelineSummary: {
     fontSize: 12,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     fontStyle: 'italic',
     marginTop: 8,
     margin: '8px 0 0',
@@ -435,17 +435,17 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     justifyContent: 'space-between',
     padding: '4px 0',
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid var(--border-light)',
   },
   legacyKey: {
     fontSize: 13,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     textTransform: 'capitalize' as const,
   },
   legacyVal: {
     fontSize: 13,
     fontWeight: 600,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
   },
 };
 

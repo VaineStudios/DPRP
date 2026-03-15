@@ -206,8 +206,8 @@ const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
                 width: isTablet ? '100%' : 320,
                 height: isTablet ? 'auto' : '60vh',
                 maxHeight: isTablet ? 400 : undefined,
-                borderLeft: isTablet ? 'none' : '1px solid #e2e8f0',
-                borderTop: isTablet ? '1px solid #e2e8f0' : 'none',
+                borderLeft: isTablet ? 'none' : '1px solid var(--border)',
+                borderTop: isTablet ? '1px solid var(--border)' : 'none',
               }}>
                 <IrisPanel
                   activeEvent={activeEvent}
@@ -262,7 +262,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
-    background: '#f1f5f9',
+    background: 'var(--bg-page)',
   },
   scrollArea: {
     flex: 1,
@@ -278,9 +278,9 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 16,
   },
   mapAiCard: {
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: 12,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    boxShadow: 'var(--shadow)',
     overflow: 'hidden',
     display: 'flex',
   },
@@ -305,13 +305,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   loading: {
     fontSize: 18,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
   },
   error: {
     fontSize: 16,
     color: '#dc2626',
     padding: 24,
-    background: '#fef2f2',
+    background: 'var(--bg-error)',
     borderRadius: 8,
   },
 };

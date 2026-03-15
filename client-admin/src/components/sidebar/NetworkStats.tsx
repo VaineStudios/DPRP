@@ -133,7 +133,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 8,
   },
   card: {
-    background: '#1e293b',
+    background: 'var(--sidebar-card)',
     borderRadius: 6,
     padding: '10px 12px',
     minHeight: 72,

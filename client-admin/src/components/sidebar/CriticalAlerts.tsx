@@ -295,7 +295,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    background: '#1e293b',
+    background: 'var(--sidebar-card)',
     borderRadius: 4,
     padding: '8px 10px',
     minHeight: 40,

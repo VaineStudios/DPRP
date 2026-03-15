@@ -54,9 +54,9 @@ const CriticalAlerts = ({ alerts, onAlertClick }: CriticalAlertsProps) => {
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: 12,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    boxShadow: 'var(--shadow)',
     overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
@@ -72,7 +72,7 @@ const styles: Record<string, React.CSSProperties> = {
   title: {
     fontSize: 16,
     fontWeight: 700,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     margin: 0,
   },
   badge: {
@@ -113,7 +113,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   alertMsg: {
     fontSize: 13,
-    color: '#334155',
+    color: 'var(--text-muted)',
     flex: 1,
     minWidth: 0,
     whiteSpace: 'nowrap' as const,
@@ -122,12 +122,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   alertTime: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     flexShrink: 0,
   },
   empty: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     textAlign: 'center' as const,
     padding: '24px 20px',
   },

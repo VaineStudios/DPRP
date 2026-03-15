@@ -49,25 +49,25 @@ const StatCards = ({ stats }: StatCardsProps) => {
       label: 'Shelters reported',
       value: `${animReporting} / ${stats.totalShelters}`,
       accent: '#0d9488',
-      valueColor: '#1e293b',
+      valueColor: 'var(--text-primary)',
     },
     {
       label: 'Critical',
       value: String(animCritical),
       accent: '#ef4444',
-      valueColor: stats.criticalCount > 0 ? '#ef4444' : '#1e293b',
+      valueColor: stats.criticalCount > 0 ? '#ef4444' : 'var(--text-primary)',
     },
     {
       label: 'Resource warnings',
       value: String(animResources),
       accent: '#f59e0b',
-      valueColor: '#1e293b',
+      valueColor: 'var(--text-primary)',
     },
     {
       label: 'Avg. capacity',
       value: `${animAvg}%`,
       accent: avgAccentColor,
-      valueColor: '#1e293b',
+      valueColor: 'var(--text-primary)',
     },
   ];
 
@@ -93,9 +93,9 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 16,
   },
   card: {
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: 12,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    boxShadow: 'var(--shadow)',
     display: 'flex',
     alignItems: 'stretch',
     minHeight: 80,
@@ -120,7 +120,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   label: {
     fontSize: 13,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     marginTop: 2,
   },
 };

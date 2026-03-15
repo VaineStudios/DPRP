@@ -93,9 +93,9 @@ const EventOverview = ({ event, onCreateEvent }: EventOverviewProps) => {
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: 12,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    boxShadow: 'var(--shadow)',
     padding: '20px 24px',
   },
   headerRow: {
@@ -107,7 +107,7 @@ const styles: Record<string, React.CSSProperties> = {
   eventName: {
     fontSize: 22,
     fontWeight: 700,
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     margin: 0,
   },
   metaRow: {
@@ -128,7 +128,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   metaItem: {
     fontSize: 13,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     fontWeight: 500,
   },
   irisStatusPill: {
@@ -161,7 +161,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   parishLabel: {
     fontSize: 12,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     fontWeight: 600,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.3px',
@@ -208,12 +208,12 @@ const styles: Record<string, React.CSSProperties> = {
   emptyText: {
     fontSize: 16,
     fontWeight: 600,
-    color: '#64748b',
+    color: 'var(--text-secondary)',
     margin: '0 0 4px',
   },
   emptySubtext: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     margin: '0 0 16px',
   },
   createBtn: {
