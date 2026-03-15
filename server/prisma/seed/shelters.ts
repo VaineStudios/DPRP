@@ -1,10 +1,34 @@
 import { PrismaClient } from '@prisma/client';
 import XLSX from 'xlsx';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+interface ShelterCoordinate {
+  name: string;
+  parish: string;
+  location: string;
+  lat: number;
+  lng: number;
+  geocoded: boolean;
+  source: 'photon' | 'parish_centroid';
+}
+
+/** Load geocoded coordinates from cache file if it exists */
+function loadGeocodedCoordinates(): Record<string, ShelterCoordinate> {
+  const coordsPath = path.resolve(__dirname, '../../../data/shelter-coordinates.json');
+  if (fs.existsSync(coordsPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(coordsPath, 'utf-8'));
+    } catch {
+      console.warn('  Warning: Could not parse shelter-coordinates.json, using parish centroids');
+    }
+  }
+  return {};
+}
 
 const PARISH_CENTROIDS: Record<string, { lat: number; lng: number }> = {
   'St. Thomas':            { lat: 17.9714, lng: -76.2874 },
@@ -64,6 +88,15 @@ export async function seedShelters(prisma: PrismaClient): Promise<void> {
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json<(string | number | undefined)[]>(sheet, { header: 1 });
 
+  // Load geocoded coordinates if available
+  const geocoded = loadGeocodedCoordinates();
+  const hasGeocodedData = Object.keys(geocoded).length > 0;
+  if (hasGeocodedData) {
+    console.log(`  Using geocoded coordinates (${Object.keys(geocoded).length} entries)`);
+  } else {
+    console.log('  No geocoded data found, using parish centroids (run geocode-shelters.ts first)');
+  }
+
   const shelters: {
     name: string;
     parish: string;
@@ -74,6 +107,8 @@ export async function seedShelters(prisma: PrismaClient): Promise<void> {
     lng: number | null;
   }[] = [];
 
+  let geocodedCount = 0;
+
   // Data starts at row 6 (index), header is row 5
   for (let i = 6; i < rows.length; i++) {
     const row = rows[i];
@@ -83,16 +118,33 @@ export async function seedShelters(prisma: PrismaClient): Promise<void> {
     if (rawParish.length > 30 || rawParish === 'PARISH') continue;
 
     const parish = normalizeParish(rawParish);
-    const centroid = PARISH_CENTROIDS[parish];
+    const name = String(row[2] ?? '').trim();
+
+    // Look up geocoded coordinates
+    const key = `${name.toLowerCase().trim()}::${parish.toLowerCase().trim()}`;
+    const coords = geocoded[key];
+
+    let lat: number | null;
+    let lng: number | null;
+
+    if (coords) {
+      lat = coords.lat;
+      lng = coords.lng;
+      if (coords.geocoded) geocodedCount++;
+    } else {
+      const centroid = PARISH_CENTROIDS[parish];
+      lat = centroid ? addJitter(centroid.lat) : null;
+      lng = centroid ? addJitter(centroid.lng) : null;
+    }
 
     shelters.push({
-      name: String(row[2] ?? '').trim(),
+      name,
       parish,
       location: row[3] ? String(row[3]).trim() : null,
       areasServed: row[4] ? String(row[4]).trim() : null,
       facilityType: row[5] ? normalizeFacilityType(String(row[5])) : null,
-      lat: centroid ? addJitter(centroid.lat) : null,
-      lng: centroid ? addJitter(centroid.lng) : null,
+      lat,
+      lng,
     });
   }
 
@@ -100,4 +152,7 @@ export async function seedShelters(prisma: PrismaClient): Promise<void> {
 
   const parishes = new Set(shelters.map(s => s.parish));
   console.log(`  Seeded ${shelters.length} shelters across ${parishes.size} parishes`);
+  if (hasGeocodedData) {
+    console.log(`  ${geocodedCount} with Nominatim coordinates, ${shelters.length - geocodedCount} with fallback`);
+  }
 }

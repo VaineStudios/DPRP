@@ -64,4 +64,31 @@ export const submitUpdate = (data: ShelterUpdateData): Promise<{ update: object 
     body: JSON.stringify(data),
   });
 
+export interface ShelterSummary {
+  id: string;
+  name: string;
+  parish: string;
+  facilityType: string | null;
+  location: string | null;
+}
+
+export const getSheltersByParish = (parish: string): Promise<{ shelters: ShelterSummary[] }> =>
+  apiFetch<{ shelters: ShelterSummary[] }>(`/api/shelters?parish=${encodeURIComponent(parish)}`);
+
+export const getShelterById = (id: string): Promise<{ shelter: { id: string; parish: string } }> =>
+  apiFetch<{ shelter: { id: string; parish: string } }>(`/api/shelters/${encodeURIComponent(id)}`);
+
+export interface ShelterUpdateResponse {
+  id: string;
+  capacityLevel: number;
+  waterLevel: number;
+  foodLevel: number;
+  medicalLevel: number;
+  notes: string | null;
+  createdAt: string;
+}
+
+export const getUpdateHistory = (shelterId: string): Promise<{ updates: ShelterUpdateResponse[] }> =>
+  apiFetch<{ updates: ShelterUpdateResponse[] }>(`/api/updates/${encodeURIComponent(shelterId)}`);
+
 export type { UserResponse, LoginResponse, ShelterUpdateData };

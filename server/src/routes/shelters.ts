@@ -5,8 +5,29 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
 
-// GET /api/shelters — list all with latest update
-router.get('/', authenticate, async (_req: Request, res: Response): Promise<void> => {
+// GET /api/shelters — list shelters, optionally filtered by parish
+router.get('/', authenticate, async (req: Request, res: Response): Promise<void> => {
+  const parish = req.query.parish as string | undefined;
+
+  // Lightweight response for shelter picker (filtered by parish)
+  if (parish) {
+    const shelters = await prisma.shelter.findMany({
+      where: { parish },
+      select: {
+        id: true,
+        name: true,
+        parish: true,
+        facilityType: true,
+        location: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    res.json({ shelters });
+    return;
+  }
+
+  // Full response for admin dashboard (all shelters with latest update)
   const shelters = await prisma.shelter.findMany({
     include: {
       updates: {
