@@ -31,7 +31,20 @@ app.use(express.json());
 
 // Health check (no auth)
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  const __dir = path.dirname(fileURLToPath(import.meta.url));
+  const pubDir = path.join(__dir, '..', 'public');
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    cwd: process.cwd(),
+    __dirname: __dir,
+    clientDir: pubDir,
+    publicExists: fs.existsSync(pubDir),
+    adminExists: fs.existsSync(path.join(pubDir, 'client-admin', 'index.html')),
+    shelterExists: fs.existsSync(path.join(pubDir, 'client-shelter', 'index.html')),
+    residentExists: fs.existsSync(path.join(pubDir, 'client-resident', 'index.html')),
+    publicContents: fs.existsSync(pubDir) ? fs.readdirSync(pubDir) : 'NOT FOUND',
+  });
 });
 
 // Routes
@@ -56,11 +69,11 @@ const adminIndex = path.join(clientDir, 'client-admin', 'index.html');
 const shelterIndex = path.join(clientDir, 'client-shelter', 'index.html');
 const residentIndex = path.join(clientDir, 'client-resident', 'index.html');
 
-app.get('/shelter/*', (_req, res, next) => {
+app.get(['/shelter', '/shelter/*'], (_req, res, next) => {
   if (fs.existsSync(shelterIndex)) return res.sendFile(shelterIndex);
   next();
 });
-app.get('/resident/*', (_req, res, next) => {
+app.get(['/resident', '/resident/*'], (_req, res, next) => {
   if (fs.existsSync(residentIndex)) return res.sendFile(residentIndex);
   next();
 });
