@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  SHELTER_MANAGER
+}
+
+enum DisasterStatus {
+  PREPARING
+  ACTIVE
+  RECOVERY
+  CLOSED
+}
+
+enum ShelterStatus {
+  OPERATIONAL
+  OFFLINE
+}
+
+enum UpdateSource {
+  WEB
+  SMS
+}
+
+enum RecommendationType {
+  RESPONSE
+  PREPAREDNESS
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model User {
+  id             String           @id @default(uuid())
+  name           String
+  email          String           @unique
+  passwordHash   String           @map("password_hash")
+  role           UserRole
+  shelterId      String?          @map("shelter_id")
+  shelter        Shelter?         @relation(fields: [shelterId], references: [id])
+  updates        ShelterUpdate[]
+  acknowledged   AiRecommendation[] @relation("AcknowledgedBy")
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model Shelter {
+  id             String           @id @default(uuid())
+  name           String
+  parish         String
+  location       String?
+  areasServed    String?          @map("areas_served")
+  facilityType   String?          @map("facility_type")
+  lat            Float?
+  lng            Float?
+  maxCapacity    Int?             @map("max_capacity")
+  status         ShelterStatus    @default(OPERATIONAL)
+  managers       User[]
+  updates        ShelterUpdate[]
+  recommendations AiRecommendation[]
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  @@map("shelters")
+}
+
+model DisasterEvent {
+  id               String            @id @default(uuid())
+  name             String
+  category         Int?
+  windSpeedMph     Float?            @map("wind_speed_mph")
+  status           DisasterStatus    @default(PREPARING)
+  affectedParishes String[]          @map("affected_parishes")
+  landfallDate     DateTime?         @map("landfall_date")
+  startDate        DateTime          @map("start_date")
+  endDate          DateTime?         @map("end_date")
+  notes            String?
+  updates          ShelterUpdate[]
+  recommendations  AiRecommendation[]
+  createdAt        DateTime          @default(now()) @map("created_at")
+
+  @@map("disaster_events")
+}
+
+model ShelterUpdate {
+  id               String         @id @default(uuid())
+  shelterId        String         @map("shelter_id")
+  shelter          Shelter        @relation(fields: [shelterId], references: [id])
+  disasterEventId  String?        @map("disaster_event_id")
+  disasterEvent    DisasterEvent? @relation(fields: [disasterEventId], references: [id])
+  reportedById     String?        @map("reported_by")
+  reportedBy       User?          @relation(fields: [reportedById], references: [id])
+  capacityLevel    Int            @map("capacity_level")
+  waterLevel       Int            @map("water_level")
+  foodLevel        Int            @map("food_level")
+  medicalLevel     Int            @map("medical_level")
+  notes            String?
+  source           UpdateSource   @default(WEB)
+  createdAt        DateTime       @default(now()) @map("created_at")
+
+  @@index([shelterId, createdAt])
+  @@index([disasterEventId])
+  @@map("shelter_updates")
+}
+
+model AiRecommendation {
+  id               String              @id @default(uuid())
+  disasterEventId  String?             @map("disaster_event_id")
+  disasterEvent    DisasterEvent?      @relation(fields: [disasterEventId], references: [id])
+  shelterId        String?             @map("shelter_id")
+  shelter          Shelter?            @relation(fields: [shelterId], references: [id])
+  type             RecommendationType
+  priority         Priority
+  recommendation   String
+  reasoning        String?
+  acknowledgedById String?             @map("acknowledged_by")
+  acknowledgedBy   User?               @relation("AcknowledgedBy", fields: [acknowledgedById], references: [id])
+  acknowledgedAt   DateTime?           @map("acknowledged_at")
+  createdAt        DateTime            @default(now()) @map("created_at")
+
+  @@index([disasterEventId, type])
+  @@map("ai_recommendations")
+}
