@@ -1,0 +1,84 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [dev]
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # ── Build server ──────────────────────────────────────
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Generate Prisma client
+        working-directory: server
+        run: npx prisma generate
+
+      - name: Build server
+        working-directory: server
+        run: npm run build
+
+      # ── Build clients (parallel) ──────────────────────────
+      - name: Install & build client-admin
+        working-directory: client-admin
+        run: npm ci && npm run build
+
+      - name: Install & build client-resident
+        working-directory: client-resident
+        run: npm ci && npm run build
+
+      - name: Install & build client-shelter
+        working-directory: client-shelter
+        run: npm ci && npm run build
+
+      # ── Configure SSH ─────────────────────────────────────
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      # ── Deploy to EC2 ─────────────────────────────────────
+      - name: Deploy server
+        env:
+          REMOTE: ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}
+        run: |
+          ssh $REMOTE "mkdir -p ~/dprp/server/prisma"
+          rsync -avz --delete server/dist/ $REMOTE:~/dprp/server/dist/
+          rsync -avz server/package.json server/package-lock.json $REMOTE:~/dprp/server/
+          rsync -avz --delete server/prisma/ $REMOTE:~/dprp/server/prisma/
+
+      - name: Deploy clients
+        env:
+          REMOTE: ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}
+        run: |
+          rsync -avz --delete client-admin/dist/ $REMOTE:~/dprp/client-admin/
+          rsync -avz --delete client-resident/dist/ $REMOTE:~/dprp/client-resident/
+          rsync -avz --delete client-shelter/dist/ $REMOTE:~/dprp/client-shelter/
+
+      # ── Install production deps, migrate, restart ─────────
+      - name: Restart services
+        env:
+          REMOTE: ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}
+        run: |
+          ssh $REMOTE << 'ENDSSH'
+            cd ~/dprp/server
+            npm install --omit=dev
+            npx prisma migrate deploy
+            pm2 restart dprp-server 2>/dev/null || pm2 start dist/index.js --name dprp-server
+            pm2 save
+          ENDSSH
