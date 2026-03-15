@@ -1,15 +1,15 @@
-name: Deploy to Railway
+name: Build & Validate
 
 on:
   push:
-    branches: [railway-deploy]
+    branches: [railway-deploy, dev]
   workflow_dispatch:
 
 env:
   NODE_VERSION: "20"
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -32,14 +32,6 @@ jobs:
         working-directory: client-shelter
         run: npm ci && tsc -b && npx vite build --base /shelter/
 
-      # ── Copy client builds into server/public/ ───────────
-      - name: Assemble static files
-        run: |
-          mkdir -p server/public
-          cp -r client-admin/dist server/public/client-admin
-          cp -r client-resident/dist server/public/client-resident
-          cp -r client-shelter/dist server/public/client-shelter
-
       # ── Build server ─────────────────────────────────────
       - name: Install server dependencies
         working-directory: server
@@ -52,13 +44,3 @@ jobs:
       - name: Build server
         working-directory: server
         run: npm run build
-
-      # ── Deploy to Railway ────────────────────────────────
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy to Railway
-        working-directory: server
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service dprp-server
