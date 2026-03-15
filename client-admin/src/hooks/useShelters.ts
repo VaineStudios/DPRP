@@ -6,6 +6,7 @@ export const useShelters = (isAuthenticated: boolean) => {
   const [shelterMap, setShelterMap] = useState<Map<string, Shelter>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [, setTick] = useState(0);
 
   const fetchShelters = useCallback(async () => {
     try {
@@ -27,6 +28,13 @@ export const useShelters = (isAuthenticated: boolean) => {
     if (!isAuthenticated) return;
     fetchShelters();
   }, [isAuthenticated, fetchShelters]);
+
+  // Re-evaluate offline status every 60 seconds
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const interval = setInterval(() => setTick(t => t + 1), 60_000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   const updateShelter = useCallback((shelterId: string, update: ShelterUpdate) => {
     setShelterMap(prev => {

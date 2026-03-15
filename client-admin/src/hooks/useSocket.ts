@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { connect, disconnect, getSocket } from '../api/socket';
-import type { ShelterUpdate } from '../api/client';
+import type { ShelterUpdateEvent } from '../api/client';
 
 export const useSocket = (
   token: string | null,
-  onShelterUpdate: (shelterId: string, update: ShelterUpdate) => void
+  onShelterUpdate: (event: ShelterUpdateEvent) => void
 ) => {
   useEffect(() => {
     if (!token) return;
@@ -22,8 +22,8 @@ export const useSocket = (
     const socket = getSocket();
     if (!socket) return;
 
-    const handleUpdate = (data: { shelterId: string; update: ShelterUpdate }) => {
-      onShelterUpdate(data.shelterId, data.update);
+    const handleUpdate = (data: ShelterUpdateEvent) => {
+      onShelterUpdate(data);
     };
 
     socket.on('shelter:updated', handleUpdate);

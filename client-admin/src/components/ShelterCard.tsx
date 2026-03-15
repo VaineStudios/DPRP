@@ -1,5 +1,5 @@
 import type { Shelter } from '../api/client';
-import { getPinColor, getTimeSince } from '../utils/shelter';
+import { getPinColor, getTimeSince, isOffline } from '../utils/shelter';
 
 interface ShelterCardProps {
   shelter: Shelter;
@@ -22,6 +22,7 @@ const ShelterCard = ({ shelter }: ShelterCardProps) => {
   const update = shelter.latestUpdate;
   const color = getPinColor(shelter);
   const timeSince = update ? getTimeSince(update.createdAt) : null;
+  const offline = isOffline(shelter);
 
   return (
     <div style={styles.card}>
@@ -38,7 +39,11 @@ const ShelterCard = ({ shelter }: ShelterCardProps) => {
             <Stat label="Medical" level={update.medicalLevel} invert />
           </div>
           {update.notes && <p style={styles.notes}>{update.notes}</p>}
-          <p style={styles.time}>Updated {timeSince}</p>
+          {offline ? (
+            <p style={styles.offlineWarning}>OFFLINE — Last seen {timeSince}</p>
+          ) : (
+            <p style={styles.time}>Updated {timeSince}</p>
+          )}
         </>
       ) : (
         <p style={styles.noData}>Awaiting first report</p>
@@ -106,6 +111,15 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 11,
     color: '#94a3b8',
     marginTop: 8,
+  },
+  offlineWarning: {
+    fontSize: 12,
+    color: '#dc2626',
+    fontWeight: 600,
+    marginTop: 8,
+    padding: '4px 8px',
+    background: '#fef2f2',
+    borderRadius: 4,
   },
   noData: {
     fontSize: 13,

@@ -16,6 +16,12 @@ export const getPinColor = (shelter: Shelter): string => {
   return '#ef4444'; // Red - critical
 };
 
+export const isOffline = (shelter: Shelter): boolean => {
+  const update = shelter.latestUpdate;
+  if (!update) return true;
+  return Date.now() - new Date(update.createdAt).getTime() > OFFLINE_THRESHOLD_MS;
+};
+
 export const getTimeSince = (dateStr: string): string => {
   const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
 

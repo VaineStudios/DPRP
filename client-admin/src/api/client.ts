@@ -22,6 +22,17 @@ export interface ShelterUpdate {
   createdAt: string;
 }
 
+export interface ShelterUpdateEvent {
+  shelterId: string;
+  update: ShelterUpdate;
+  shelter: {
+    id: string;
+    name: string;
+    lat: number | null;
+    lng: number | null;
+  };
+}
+
 export interface Shelter {
   id: string;
   name: string;
