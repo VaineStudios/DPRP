@@ -4,3 +4,4 @@ dist/
 .prisma/
 *.log
 *.pem
+.claude/

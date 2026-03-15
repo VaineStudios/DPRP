@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import IconSelector from '../components/IconSelector';
 import ConnectionStatus from '../components/ConnectionStatus';
-import { submitUpdate } from '../api/client';
+import { useOfflineQueue } from '../hooks/useOfflineQueue';
 import { useLatestUpdate } from '../hooks/useLatestUpdate';
 import type { SelectedShelter } from '../hooks/useShelter';
 
@@ -31,7 +31,27 @@ const UpdateForm = ({ shelter, onClearShelter, onLogout }: UpdateFormProps) => {
   const [notes, setNotes] = useState('');
   const [prefilled, setPrefilled] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [banner, setBanner] = useState<{ type: 'success' | 'warning' | 'error'; message: string } | null>(null);
+  const {
+    submitUpdate: sendUpdate, queueLength, isFlushing,
+    lastFlushResult, needsReauth, clearLastFlushResult,
+  } = useOfflineQueue();
+
+  // Show banner when flush completes
+  useEffect(() => {
+    if (!lastFlushResult) return;
+    const { sent, failed } = lastFlushResult;
+    if (sent > 0 && failed === 0) {
+      setBanner({ type: 'success', message: `${sent} queued update${sent !== 1 ? 's' : ''} sent successfully!` });
+    } else if (sent > 0) {
+      setBanner({ type: 'warning', message: `${sent} of ${sent + failed} queued updates sent. ${failed} failed after 5 retries.` });
+    } else if (failed > 0) {
+      setBanner({ type: 'warning', message: `${failed} queued update${failed !== 1 ? 's' : ''} failed after 5 retries.` });
+    }
+    clearLastFlushResult();
+    const timer = setTimeout(() => setBanner(null), 5000);
+    return () => clearTimeout(timer);
+  }, [lastFlushResult, clearLastFlushResult]);
 
   // Pre-fill selectors when latest update loads (only once per shelter)
   useEffect(() => {
@@ -63,7 +83,7 @@ const UpdateForm = ({ shelter, onClearShelter, onLogout }: UpdateFormProps) => {
     setBanner(null);
 
     try {
-      await submitUpdate({
+      const result = await sendUpdate({
         shelterId: shelter.id,
         capacityLevel: capacity!,
         waterLevel: water!,
@@ -72,9 +92,12 @@ const UpdateForm = ({ shelter, onClearShelter, onLogout }: UpdateFormProps) => {
         notes: notes.trim() || undefined,
       });
 
-      setBanner({ type: 'success', message: 'Update sent!' });
+      if (result.queued) {
+        setBanner({ type: 'warning', message: 'Update saved — will send when back online' });
+      } else {
+        setBanner({ type: 'success', message: 'Update sent!' });
+      }
 
-      // Update the cached latest + keep values in selectors (don't reset to null)
       updateAfterSubmit({
         capacityLevel: capacity!,
         waterLevel: water!,
@@ -84,19 +107,19 @@ const UpdateForm = ({ shelter, onClearShelter, onLogout }: UpdateFormProps) => {
       });
 
       setNotes('');
-      setTimeout(() => setBanner(null), 3000);
+      setTimeout(() => setBanner(null), 5000);
     } catch (err) {
       console.error('Update failed:', err);
-      setBanner({ type: 'error', message: 'Update queued — will send when back online' });
+      setBanner({ type: 'error', message: err instanceof Error ? err.message : 'Update failed' });
       setTimeout(() => setBanner(null), 5000);
     } finally {
       setLoading(false);
     }
-  }, [allSet, capacity, water, food, medical, notes, shelter.id, loading, updateAfterSubmit]);
+  }, [allSet, capacity, water, food, medical, notes, shelter.id, loading, updateAfterSubmit, sendUpdate]);
 
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
-      <ConnectionStatus />
+      <ConnectionStatus queueLength={queueLength} isFlushing={isFlushing} />
 
       {/* Header */}
       <div style={styles.header}>
@@ -114,17 +137,33 @@ const UpdateForm = ({ shelter, onClearShelter, onLogout }: UpdateFormProps) => {
         </button>
       </div>
 
-      {/* Banner */}
-      {banner && (
+      {/* Reauth banner (persistent, takes priority) */}
+      {needsReauth && (
         <div style={{
           padding: '10px 12px',
           borderRadius: 8,
           marginBottom: 12,
           fontSize: 14,
           fontWeight: 600,
-          color: banner.type === 'success' ? '#15803d' : '#92400e',
-          background: banner.type === 'success' ? '#f0fdf4' : '#fffbeb',
-          border: `1px solid ${banner.type === 'success' ? '#bbf7d0' : '#fde68a'}`,
+          color: '#dc2626',
+          background: '#fef2f2',
+          border: '1px solid #fecaca',
+        }}>
+          Session expired — sign in again to send queued updates
+        </div>
+      )}
+
+      {/* Banner */}
+      {banner && !needsReauth && (
+        <div style={{
+          padding: '10px 12px',
+          borderRadius: 8,
+          marginBottom: 12,
+          fontSize: 14,
+          fontWeight: 600,
+          color: banner.type === 'success' ? '#15803d' : banner.type === 'warning' ? '#92400e' : '#dc2626',
+          background: banner.type === 'success' ? '#f0fdf4' : banner.type === 'warning' ? '#fffbeb' : '#fef2f2',
+          border: `1px solid ${banner.type === 'success' ? '#bbf7d0' : banner.type === 'warning' ? '#fde68a' : '#fecaca'}`,
         }}>
           {banner.message}
         </div>

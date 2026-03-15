@@ -163,36 +163,31 @@ const AiPanel = ({ activeEvent, onFlyToShelter }: AiPanelProps) => {
 
 const styles: Record<string, React.CSSProperties> = {
   panel: {
-    width: 360,
-    flexShrink: 0,
-    background: '#f8fafc',
-    borderLeft: '1px solid #e2e8f0',
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
     overflow: 'hidden',
+    background: '#fff',
   },
   header: {
     padding: '14px 16px 10px',
-    borderBottom: '1px solid #e2e8f0',
-    background: '#fff',
+    borderBottom: '1px solid #f1f5f9',
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 700,
     margin: 0,
     color: '#1e293b',
   },
   headerEvent: {
     fontSize: 12,
-    color: '#64748b',
+    color: '#94a3b8',
     marginTop: 2,
     display: 'block',
   },
   actions: {
     padding: '10px 16px',
-    borderBottom: '1px solid #e2e8f0',
-    background: '#fff',
+    borderBottom: '1px solid #f1f5f9',
   },
   btn: {
     width: '100%',
@@ -200,7 +195,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
     fontWeight: 600,
     color: '#fff',
-    background: '#3b82f6',
+    background: '#0d9488',
     border: 'none',
     borderRadius: 6,
     cursor: 'pointer',
@@ -211,13 +206,13 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
     fontWeight: 600,
     color: '#94a3b8',
-    background: '#e2e8f0',
+    background: '#f1f5f9',
     border: 'none',
     borderRadius: 6,
     cursor: 'not-allowed',
   },
   loadingWrap: {
-    padding: '24px 16px',
+    padding: '24px 14px',
     textAlign: 'center' as const,
   },
   loadingDots: {
@@ -230,16 +225,16 @@ const styles: Record<string, React.CSSProperties> = {
     width: 10,
     height: 10,
     borderRadius: '50%',
-    background: '#3b82f6',
+    background: '#0d9488',
     animation: 'pulse 1s ease-in-out infinite',
   },
   loadingText: {
     fontSize: 13,
-    color: '#64748b',
+    color: '#94a3b8',
   },
   error: {
-    padding: '12px 16px',
-    margin: '8px 16px',
+    padding: '12px 14px',
+    margin: '8px 14px',
     background: '#fef2f2',
     border: '1px solid #fecaca',
     borderRadius: 6,
@@ -249,17 +244,17 @@ const styles: Record<string, React.CSSProperties> = {
   list: {
     flex: 1,
     overflowY: 'auto' as const,
-    padding: '8px 16px',
+    padding: '8px 14px',
   },
   empty: {
     fontSize: 13,
     color: '#94a3b8',
     textAlign: 'center' as const,
-    padding: '32px 16px',
+    padding: '32px 14px',
     lineHeight: 1.6,
   },
   card: {
-    background: '#fff',
+    background: '#f8fafc',
     borderRadius: 8,
     padding: '12px 14px',
     marginBottom: 8,
@@ -267,7 +262,7 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'box-shadow 0.3s',
   },
   cardNew: {
-    boxShadow: '0 0 0 2px #3b82f6',
+    boxShadow: '0 0 0 2px #0d9488',
     animation: 'fadeHighlight 3s ease-out',
   },
   cardHeader: {
@@ -305,7 +300,7 @@ const styles: Record<string, React.CSSProperties> = {
   shelterLink: {
     fontSize: 12,
     fontWeight: 600,
-    color: '#3b82f6',
+    color: '#0d9488',
     background: 'none',
     border: 'none',
     padding: 0,

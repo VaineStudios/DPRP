@@ -12,8 +12,7 @@ html, body, #root {
   font-size: 14px;
   line-height: 1.5;
   color: #1e293b;
-  background: #f8fafc;
-  overflow: hidden;
+  background: #f1f5f9;
 }
 
 input, textarea, select, button {
@@ -56,4 +55,32 @@ button {
 @keyframes fadeHighlight {
   from { box-shadow: 0 0 0 2px #3b82f6; }
   to { box-shadow: 0 0 0 0px transparent; }
+}
+
+@keyframes slideInAlert {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes countUp {
+  from { opacity: 0.5; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive stat cards */
+@media (max-width: 1024px) {
+  .stat-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+@media (max-width: 640px) {
+  .stat-cards-grid {
+    grid-template-columns: 1fr !important;
+  }
 }

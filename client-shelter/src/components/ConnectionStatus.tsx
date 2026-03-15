@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 
-const ConnectionStatus = () => {
+interface ConnectionStatusProps {
+  queueLength?: number;
+  isFlushing?: boolean;
+}
+
+const ConnectionStatus = ({ queueLength = 0, isFlushing = false }: ConnectionStatusProps) => {
   const [online, setOnline] = useState(navigator.onLine);
 
   useEffect(() => {
@@ -13,6 +18,19 @@ const ConnectionStatus = () => {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  let label: string;
+  if (online && isFlushing && queueLength > 0) {
+    label = `Online — sending ${queueLength} queued update${queueLength !== 1 ? 's' : ''}...`;
+  } else if (online && queueLength > 0) {
+    label = `Online — ${queueLength} update${queueLength !== 1 ? 's' : ''} queued`;
+  } else if (online) {
+    label = 'Online';
+  } else if (queueLength > 0) {
+    label = `Offline — ${queueLength} update${queueLength !== 1 ? 's' : ''} queued`;
+  } else {
+    label = 'Offline — updates will queue';
+  }
 
   return (
     <div style={{
@@ -38,7 +56,7 @@ const ConnectionStatus = () => {
         background: online ? '#22c55e' : '#ef4444',
         flexShrink: 0,
       }} />
-      {online ? 'Online' : 'Offline — updates will queue'}
+      {label}
     </div>
   );
 };

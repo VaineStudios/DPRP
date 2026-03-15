@@ -6,6 +6,7 @@ import ShelterPin from './ShelterPin';
 export interface FlyTarget {
   lat: number;
   lng: number;
+  zoom?: number;
 }
 
 interface MapProps {
@@ -23,7 +24,7 @@ const MapController = ({ flyTarget }: { flyTarget: FlyTarget | null }) => {
 
   useEffect(() => {
     if (flyTarget) {
-      map.flyTo([flyTarget.lat, flyTarget.lng], 14, { duration: 1 });
+      map.flyTo([flyTarget.lat, flyTarget.lng], flyTarget.zoom ?? 14, { duration: 1 });
     }
   }, [flyTarget, map]);
 

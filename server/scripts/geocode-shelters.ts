@@ -78,6 +78,24 @@ const PARISH_CENTROIDS: Record<string, { lat: number; lng: number }> = {
 // Jamaica bounding box for filtering results
 const JM_BOUNDS = { minLat: 17.5, maxLat: 18.6, minLng: -78.5, maxLng: -76.0 };
 
+// Parish bounding boxes for validating geocode results land in the correct parish
+const PARISH_BOUNDS: Record<string, { minLat: number; maxLat: number; minLng: number; maxLng: number }> = {
+  'St. Thomas':            { minLat: 17.85, maxLat: 18.1,  minLng: -76.55, maxLng: -76.15 },
+  'Portland':              { minLat: 18.05, maxLat: 18.3,  minLng: -76.55, maxLng: -76.15 },
+  'Kingston & St. Andrew': { minLat: 17.9,  maxLat: 18.15, minLng: -76.9,  maxLng: -76.7  },
+  'St. Catherine':         { minLat: 17.85, maxLat: 18.3,  minLng: -77.1,  maxLng: -76.7  },
+  'Clarendon':             { minLat: 17.75, maxLat: 18.15, minLng: -77.45, maxLng: -77.05 },
+  'Manchester':            { minLat: 17.9,  maxLat: 18.2,  minLng: -77.65, maxLng: -77.35 },
+  'St. Elizabeth':         { minLat: 17.8,  maxLat: 18.15, minLng: -77.9,  maxLng: -77.55 },
+  'Westmoreland':          { minLat: 18.05, maxLat: 18.4,  minLng: -78.35, maxLng: -77.85 },
+  'St. James':             { minLat: 18.3,  maxLat: 18.55, minLng: -78.1,  maxLng: -77.75 },
+  'Hanover':               { minLat: 18.3,  maxLat: 18.5,  minLng: -78.35, maxLng: -78.0  },
+  'Trelawny':              { minLat: 18.15, maxLat: 18.5,  minLng: -77.75, maxLng: -77.4  },
+  'St. Ann':               { minLat: 18.15, maxLat: 18.5,  minLng: -77.4,  maxLng: -76.95 },
+  'St. Mary':              { minLat: 18.15, maxLat: 18.45, minLng: -76.95, maxLng: -76.55 },
+  'Portmore':              { minLat: 17.9,  maxLat: 18.0,  minLng: -77.0,  maxLng: -76.85 },
+};
+
 // ── Parish normalization (reused from seed) ────────────────────────────────
 
 const PARISH_NORMALIZATION: Record<string, string> = {
@@ -144,16 +162,23 @@ const isInJamaica = (lat: number, lng: number): boolean => {
          lng >= JM_BOUNDS.minLng && lng <= JM_BOUNDS.maxLng;
 };
 
+const isInParish = (lat: number, lng: number, parish: string): boolean => {
+  const bounds = PARISH_BOUNDS[parish];
+  if (!bounds) return true; // unknown parish, skip check
+  return lat >= bounds.minLat && lat <= bounds.maxLat &&
+         lng >= bounds.minLng && lng <= bounds.maxLng;
+};
+
 // ── Photon API ─────────────────────────────────────────────────────────────
 
 const PHOTON_BASE = 'https://photon.komoot.io/api/';
 
-async function photonSearch(query: string, retries = 3): Promise<{ lat: number; lng: number } | null> {
+async function photonSearch(query: string, parish: string, retries = 3): Promise<{ lat: number; lng: number } | null> {
   // Photon supports bbox parameter and country bias via lat/lon
   // Use Jamaica center as location bias
   const params = new URLSearchParams({
     q: query,
-    limit: '3',
+    limit: '5',
     lang: 'en',
     lat: '18.1',
     lon: '-77.3',
@@ -192,16 +217,16 @@ async function photonSearch(query: string, retries = 3): Promise<{ lat: number; 
         return null;
       }
 
-      // Find the first result that's actually in Jamaica
+      // Find the first result that's in Jamaica AND in the correct parish
       for (const feature of data.features) {
         const [lon, lat] = feature.geometry.coordinates;
         const cc = feature.properties.countrycode;
-        if (cc === 'JM' || isInJamaica(lat, lon)) {
+        if ((cc === 'JM' || isInJamaica(lat, lon)) && isInParish(lat, lon, parish)) {
           return { lat, lng: lon };
         }
       }
 
-      // No Jamaica result found
+      // No valid result found for this parish
       return null;
     } catch (err) {
       console.warn(`  Network error (attempt ${attempt}/${retries}): ${(err as Error).message}`);
@@ -242,7 +267,7 @@ async function geocodeShelter(
   // Try each query in order
   for (let i = 0; i < queries.length; i++) {
     const query = queries[i];
-    const result = await photonSearch(query);
+    const result = await photonSearch(query, parish);
 
     if (result) {
       return {
