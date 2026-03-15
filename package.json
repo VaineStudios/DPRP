@@ -4,7 +4,7 @@
   "description": "Disaster Preparedness & Response Platform for Jamaica",
   "private": true,
   "scripts": {
-    "dev": "concurrently -n server,shelter,admin,resident -c blue,green,magenta,red \"npm run dev --prefix server\" \"npm run dev --prefix client-shelter\" \"npm run dev --prefix client-admin\" \"npm run dev --prefix client-resident\"",
+    "dev": "concurrently --kill-others -n server,shelter,admin,resident -c blue,green,magenta,red \"npm run dev --prefix server\" \"npm run dev --prefix client-shelter\" \"npm run dev --prefix client-admin\" \"npm run dev --prefix client-resident\"",
     "dev:server": "npm run dev --prefix server",
     "dev:shelter": "npm run dev --prefix client-shelter",
     "dev:admin": "npm run dev --prefix client-admin",

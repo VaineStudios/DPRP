@@ -1,36 +1,70 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import IconSelector from '../components/IconSelector';
 import ConnectionStatus from '../components/ConnectionStatus';
-import LastUpdate from '../components/LastUpdate';
 import { submitUpdate } from '../api/client';
-import type { UserResponse } from '../api/client';
+import { useLatestUpdate } from '../hooks/useLatestUpdate';
+import type { SelectedShelter } from '../hooks/useShelter';
 
 interface UpdateFormProps {
-  user: UserResponse;
+  shelter: SelectedShelter;
+  onClearShelter: () => void;
   onLogout: () => void;
 }
 
-const UpdateForm = ({ user, onLogout }: UpdateFormProps) => {
+const getLevelColor = (level: number, invert: boolean): string => {
+  if (invert) {
+    if (level <= 2) return '#ef4444';
+    if (level === 3) return '#f59e0b';
+    return '#22c55e';
+  }
+  if (level <= 2) return '#22c55e';
+  if (level === 3) return '#f59e0b';
+  return '#ef4444';
+};
+
+const UpdateForm = ({ shelter, onClearShelter, onLogout }: UpdateFormProps) => {
+  const { latestUpdate, isLoading: loadingLatest, updateAfterSubmit } = useLatestUpdate(shelter.id);
   const [capacity, setCapacity] = useState<number | null>(null);
   const [water, setWater] = useState<number | null>(null);
   const [food, setFood] = useState<number | null>(null);
   const [medical, setMedical] = useState<number | null>(null);
   const [notes, setNotes] = useState('');
+  const [prefilled, setPrefilled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
+
+  // Pre-fill selectors when latest update loads (only once per shelter)
+  useEffect(() => {
+    if (latestUpdate && !prefilled) {
+      setCapacity(latestUpdate.capacityLevel);
+      setWater(latestUpdate.waterLevel);
+      setFood(latestUpdate.foodLevel);
+      setMedical(latestUpdate.medicalLevel);
+      setPrefilled(true);
+    }
+  }, [latestUpdate, prefilled]);
+
+  // Reset prefilled flag when shelter changes
+  useEffect(() => {
+    setPrefilled(false);
+    setCapacity(null);
+    setWater(null);
+    setFood(null);
+    setMedical(null);
+    setNotes('');
+  }, [shelter.id]);
 
   const allSet = capacity !== null && water !== null && food !== null && medical !== null;
 
   const handleSubmit = useCallback(async () => {
-    if (!allSet || !user.shelterId || loading) return;
+    if (!allSet || loading) return;
 
     setLoading(true);
     setBanner(null);
 
     try {
       await submitUpdate({
-        shelterId: user.shelterId,
+        shelterId: shelter.id,
         capacityLevel: capacity!,
         waterLevel: water!,
         foodLevel: food!,
@@ -39,13 +73,17 @@ const UpdateForm = ({ user, onLogout }: UpdateFormProps) => {
       });
 
       setBanner({ type: 'success', message: 'Update sent!' });
-      setLastUpdateTime(new Date());
-      setCapacity(null);
-      setWater(null);
-      setFood(null);
-      setMedical(null);
-      setNotes('');
 
+      // Update the cached latest + keep values in selectors (don't reset to null)
+      updateAfterSubmit({
+        capacityLevel: capacity!,
+        waterLevel: water!,
+        foodLevel: food!,
+        medicalLevel: medical!,
+        notes: notes.trim() || undefined,
+      });
+
+      setNotes('');
       setTimeout(() => setBanner(null), 3000);
     } catch (err) {
       console.error('Update failed:', err);
@@ -54,7 +92,7 @@ const UpdateForm = ({ user, onLogout }: UpdateFormProps) => {
     } finally {
       setLoading(false);
     }
-  }, [allSet, capacity, water, food, medical, notes, user.shelterId, loading]);
+  }, [allSet, capacity, water, food, medical, notes, shelter.id, loading, updateAfterSubmit]);
 
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
@@ -62,8 +100,13 @@ const UpdateForm = ({ user, onLogout }: UpdateFormProps) => {
 
       {/* Header */}
       <div style={styles.header}>
-        <div>
-          <h1 style={styles.shelterName}>{user.name}</h1>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={styles.shelterRow}>
+            <h1 style={styles.shelterName}>{shelter.name}</h1>
+            <button onClick={onClearShelter} type="button" style={styles.changeBtn}>
+              Change
+            </button>
+          </div>
           <p style={styles.subtitle}>Status update</p>
         </div>
         <button onClick={onLogout} type="button" style={styles.logoutBtn}>
@@ -87,7 +130,8 @@ const UpdateForm = ({ user, onLogout }: UpdateFormProps) => {
         </div>
       )}
 
-      <LastUpdate timestamp={lastUpdateTime} />
+      {/* Current status */}
+      <CurrentStatus update={latestUpdate} loading={loadingLatest} />
 
       {/* Icon selectors */}
       <div style={{ flex: 1 }}>
@@ -152,6 +196,130 @@ const UpdateForm = ({ user, onLogout }: UpdateFormProps) => {
   );
 };
 
+/* ── Current status bar ─────────────────────────────────── */
+
+interface CurrentStatusProps {
+  update: { capacityLevel: number; waterLevel: number; foodLevel: number; medicalLevel: number; createdAt: Date; isOffline: boolean } | null;
+  loading: boolean;
+}
+
+const CurrentStatus = ({ update, loading }: CurrentStatusProps) => {
+  // Re-render every 15s to update relative time
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!update) return;
+    const interval = setInterval(() => setTick((t) => t + 1), 15000);
+    return () => clearInterval(interval);
+  }, [update]);
+
+  if (loading) return null;
+
+  if (!update) {
+    return (
+      <div style={statusStyles.container}>
+        <span style={statusStyles.noData}>No previous reports for this shelter</span>
+      </div>
+    );
+  }
+
+  const timeLabel = update.isOffline
+    ? `Last known status (offline)`
+    : `Last reported ${getRelativeTime(update.createdAt)}`;
+
+  const indicators: { label: string; level: number; invert: boolean }[] = [
+    { label: 'Cap', level: update.capacityLevel, invert: false },
+    { label: 'H₂O', level: update.waterLevel, invert: true },
+    { label: 'Food', level: update.foodLevel, invert: true },
+    { label: 'Med', level: update.medicalLevel, invert: true },
+  ];
+
+  return (
+    <div style={statusStyles.container}>
+      <div style={statusStyles.row}>
+        <span style={statusStyles.timeLabel}>{timeLabel}</span>
+        <div style={statusStyles.indicators}>
+          {indicators.map((ind) => (
+            <span key={ind.label} style={statusStyles.indicator}>
+              <span
+                style={{
+                  ...statusStyles.dot,
+                  background: getLevelColor(ind.level, ind.invert),
+                }}
+              />
+              <span style={statusStyles.indicatorLabel}>{ind.label}</span>
+              <span style={statusStyles.indicatorValue}>{ind.level}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const getRelativeTime = (date: Date): string => {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (seconds < 10) return 'just now';
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+};
+
+const statusStyles: Record<string, React.CSSProperties> = {
+  container: {
+    padding: '10px 12px',
+    background: '#f8fafc',
+    border: '1px solid #e2e8f0',
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  row: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+  },
+  timeLabel: {
+    fontSize: 13,
+    color: '#64748b',
+    fontWeight: 500,
+  },
+  indicators: {
+    display: 'flex',
+    gap: 12,
+  },
+  indicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+    fontSize: 13,
+  },
+  dot: {
+    display: 'inline-block',
+    width: 8,
+    height: 8,
+    borderRadius: '50%',
+    flexShrink: 0,
+  },
+  indicatorLabel: {
+    color: '#94a3b8',
+    fontWeight: 500,
+  },
+  indicatorValue: {
+    color: '#1e293b',
+    fontWeight: 600,
+  },
+  noData: {
+    fontSize: 13,
+    color: '#94a3b8',
+    fontStyle: 'italic',
+  },
+};
+
+/* ── Helpers ─────────────────────────────────────────────── */
+
 const Spinner = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" style={{ animation: 'spin 0.8s linear infinite' }}>
     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -166,12 +334,31 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     padding: '16px 0 12px',
+    gap: 8,
+  },
+  shelterRow: {
+    display: 'flex',
+    alignItems: 'baseline',
+    gap: 8,
+    flexWrap: 'wrap' as const,
   },
   shelterName: {
     fontSize: 18,
     fontWeight: 700,
     color: '#1e293b',
     lineHeight: 1.2,
+  },
+  changeBtn: {
+    minHeight: 'auto',
+    padding: 0,
+    fontSize: 13,
+    fontWeight: 500,
+    color: '#2563eb',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+    flexShrink: 0,
   },
   subtitle: {
     fontSize: 14,
