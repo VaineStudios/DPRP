@@ -70,6 +70,7 @@ jobs:
           rsync -avz --delete client-admin/dist/ $REMOTE:~/dprp/client-admin/
           rsync -avz --delete client-resident/dist/ $REMOTE:~/dprp/client-resident/
           rsync -avz --delete client-shelter/dist/ $REMOTE:~/dprp/client-shelter/
+          ssh $REMOTE "chmod -R 755 ~/dprp/client-admin ~/dprp/client-resident ~/dprp/client-shelter"
 
       # ── Install production deps, migrate, restart ─────────
       - name: Restart services
