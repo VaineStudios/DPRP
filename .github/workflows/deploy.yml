@@ -7,6 +7,7 @@ on:
 
 env:
   NODE_VERSION: "20"
+  SSH_PORT: ${{ secrets.EC2_SSH_PORT != '' && secrets.EC2_SSH_PORT || '22' }}
 
 jobs:
   build-and-deploy:
@@ -46,13 +47,106 @@ jobs:
         run: npm ci && tsc -b && npx vite build --base /shelter/
 
       # ── Configure SSH ─────────────────────────────────────
+      - name: Diagnose EC2 SSH connectivity
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          SSH_PORT: ${{ env.SSH_PORT }}
+        run: |
+          set +e
+          echo "::group::Secret presence checks"
+          if [ -n "$EC2_HOST" ]; then
+            echo "EC2_HOST is set"
+          else
+            echo "::error::EC2_HOST is empty or missing"
+          fi
+          if [ -n "$EC2_USERNAME" ]; then
+            echo "EC2_USERNAME is set"
+          else
+            echo "::error::EC2_USERNAME is empty or missing"
+          fi
+          if [ -n "$EC2_SSH_KEY" ]; then
+            echo "EC2_SSH_KEY is set"
+          else
+            echo "::error::EC2_SSH_KEY is empty or missing"
+          fi
+          echo "SSH_PORT=${SSH_PORT}"
+          echo "::endgroup::"
+
+          echo "::group::Runner environment"
+          uname -a
+          whoami
+          pwd
+          command -v ssh
+          ssh -V
+          command -v ssh-keyscan
+          command -v timeout
+          command -v nc || true
+          command -v dig || true
+          command -v host || true
+          command -v getent || true
+          echo "::endgroup::"
+
+          echo "::group::DNS and network reachability"
+          echo "Testing host: ${EC2_HOST}"
+          getent hosts "$EC2_HOST" || true
+          host "$EC2_HOST" || true
+          dig +short "$EC2_HOST" || true
+          ping -c 1 "$EC2_HOST" || true
+          nc -vz "$EC2_HOST" "$SSH_PORT"
+          echo "nc exit code: $?"
+          timeout 10 bash -c "</dev/tcp/$EC2_HOST/$SSH_PORT"
+          echo "/dev/tcp exit code: $?"
+          echo "::endgroup::"
+
+          echo "::group::SSH key format checks"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ls -la ~/.ssh
+          wc -c ~/.ssh/id_rsa
+          sed -n '1p;$p' ~/.ssh/id_rsa | sed 's/./*/g'
+          ssh-keygen -l -f ~/.ssh/id_rsa
+          echo "ssh-keygen exit code: $?"
+          echo "::endgroup::"
+
+          echo "::group::Host key scan"
+          rm -f ~/.ssh/known_hosts
+          ssh-keyscan -T 10 -p "$SSH_PORT" -H "$EC2_HOST" | tee -a ~/.ssh/known_hosts
+          echo "ssh-keyscan exit code: $?"
+          wc -l ~/.ssh/known_hosts || true
+          echo "::endgroup::"
+
+          echo "::group::SSH handshake test"
+          cat >> ~/.ssh/config <<EOF
+          Host *
+            ConnectTimeout 15
+            ServerAliveInterval 10
+            ServerAliveCountMax 3
+            Port ${SSH_PORT}
+            StrictHostKeyChecking yes
+            IdentityFile ~/.ssh/id_rsa
+          EOF
+          ssh -vvv -o BatchMode=yes "${EC2_USERNAME}@${EC2_HOST}" "echo connected && whoami && hostname"
+          echo "ssh exit code: $?"
+          echo "::endgroup::"
+
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-          echo -e "Host *\n  ConnectTimeout 15\n  ServerAliveInterval 10\n  ServerAliveCountMax 3" >> ~/.ssh/config
+          ssh-keyscan -T 10 -p "${{ env.SSH_PORT }}" -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config <<EOF
+          Host *
+            ConnectTimeout 15
+            ServerAliveInterval 10
+            ServerAliveCountMax 3
+            Port ${{ env.SSH_PORT }}
+            StrictHostKeyChecking yes
+            IdentityFile ~/.ssh/id_rsa
+          EOF
 
       # ── Deploy to EC2 ─────────────────────────────────────
       - name: Deploy server
