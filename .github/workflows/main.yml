@@ -1,0 +1,223 @@
+name: Deploy DPRP
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ──────────────────────────────────────────
+  # Job 1: Deploy API server to EC2
+  # ──────────────────────────────────────────
+  deploy-api:
+    name: Deploy API to EC2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install server dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: Generate Prisma client
+        working-directory: ./server
+        run: npx prisma generate
+
+      - name: Deploy to EC2
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.EC2_HOST }}
+          REMOTE_USER: ${{ secrets.EC2_USERNAME }}
+          SOURCE: "server/"
+          TARGET: "/opt/dprp/server/"
+          EXCLUDE: "node_modules/, .env"
+
+      - name: Install dependencies and restart on EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /opt/dprp/server
+            npm ci --production
+            npx prisma generate
+            npx prisma migrate deploy
+            pm2 restart dprp-api || pm2 start src/index.js --name dprp-api
+            pm2 save
+
+  # ──────────────────────────────────────────
+  # Job 2: Build and deploy Admin PWA to S3
+  # ──────────────────────────────────────────
+  deploy-admin:
+    name: Deploy Admin PWA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install and build
+        working-directory: ./client-admin
+        run: |
+          npm ci
+          npm run build
+        env:
+          VITE_API_URL: http://${{ secrets.EC2_HOST }}
+
+      - name: Deploy to S3
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --delete --cache-control "max-age=31536000,public" --exclude "index.html" --exclude "sw.js"
+        env:
+          AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_ADMIN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          SOURCE_DIR: client-admin/dist
+
+      # Upload index.html and sw.js with no-cache (must always be fresh)
+      - name: Upload no-cache files
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --cache-control "no-cache,no-store,must-revalidate"
+        env:
+          AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_ADMIN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          SOURCE_DIR: client-admin/dist
+          DEST_DIR: ""
+
+      - name: Invalidate CloudFront cache
+        uses: chetan/invalidate-cloudfront-action@v2
+        env:
+          DISTRIBUTION: ${{ secrets.CF_DISTRIBUTION_ADMIN }}
+          PATHS: "/index.html /sw.js"
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  # ──────────────────────────────────────────
+  # Job 3: Build and deploy Shelter PWA to S3
+  # ──────────────────────────────────────────
+  deploy-shelter:
+    name: Deploy Shelter PWA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install and build
+        working-directory: ./client-shelter
+        run: |
+          npm ci
+          npm run build
+        env:
+          VITE_API_URL: http://${{ secrets.EC2_HOST }}
+
+      - name: Deploy to S3
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --delete --cache-control "max-age=31536000,public" --exclude "index.html" --exclude "sw.js"
+        env:
+          AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_SHELTER }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          SOURCE_DIR: client-shelter/dist
+
+      - name: Upload no-cache files
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --cache-control "no-cache,no-store,must-revalidate"
+        env:
+          AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_SHELTER }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          SOURCE_DIR: client-shelter/dist
+          DEST_DIR: ""
+
+      - name: Invalidate CloudFront cache
+        uses: chetan/invalidate-cloudfront-action@v2
+        env:
+          DISTRIBUTION: ${{ secrets.CF_DISTRIBUTION_SHELTER }}
+          PATHS: "/index.html /sw.js"
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  # ──────────────────────────────────────────
+  # Job 4: Build and deploy Resident PWA to S3
+  # ──────────────────────────────────────────
+  deploy-resident:
+    name: Deploy Resident PWA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install and build
+        working-directory: ./client-resident
+        run: |
+          npm ci
+          npm run build
+        env:
+          VITE_API_URL: http://${{ secrets.EC2_HOST }}
+
+      - name: Deploy to S3
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --delete --cache-control "max-age=31536000,public" --exclude "index.html" --exclude "sw.js"
+        env:
+          AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_RESIDENT }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          SOURCE_DIR: client-resident/dist
+
+      - name: Upload no-cache files
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --cache-control "no-cache,no-store,must-revalidate"
+        env:
+          AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_RESIDENT }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          SOURCE_DIR: client-resident/dist
+          DEST_DIR: ""
+
+      - name: Invalidate CloudFront cache
+        uses: chetan/invalidate-cloudfront-action@v2
+        env:
+          DISTRIBUTION: ${{ secrets.CF_DISTRIBUTION_RESIDENT }}
+          PATHS: "/index.html /sw.js"
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
