@@ -4,6 +4,8 @@ A real-time coordination platform for Jamaica's disaster response ecosystem. Thr
 
 Seeded with **915 ODPEM-registered shelters** across Jamaica's 14 parishes.
 
+> **New here?** See the [Getting Started Guide](GETTING-STARTED.md) for a quick overview of all three apps, how to use them, and demo instructions.
+
 ---
 
 ## Architecture
