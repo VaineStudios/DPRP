@@ -3,7 +3,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 
 const App = () => {
-  const { isAuthenticated, isLoading, user, login, logout } = useAuth();
+  const { isAuthenticated, isLoading, token, user, login, logout } = useAuth();
 
   if (isLoading) {
     return (
@@ -13,11 +13,11 @@ const App = () => {
     );
   }
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated || !user || !token) {
     return <Login onLogin={login} />;
   }
 
-  return <Dashboard user={user} onLogout={logout} />;
+  return <Dashboard user={user} token={token} onLogout={logout} />;
 };
 
 export default App;

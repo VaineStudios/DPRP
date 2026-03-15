@@ -1,44 +1,37 @@
-import type { Shelter } from '../api/client';
+import type { Shelter, UserResponse } from '../api/client';
 import { getPinColor } from '../utils/shelter';
 
 interface StatusBarProps {
   shelters: Shelter[];
+  user: UserResponse;
   onLogout: () => void;
 }
 
-const StatusBar = ({ shelters, onLogout }: StatusBarProps) => {
+const StatusBar = ({ shelters, user, onLogout }: StatusBarProps) => {
   const total = shelters.length;
-  const green = shelters.filter(s => getPinColor(s) === '#22c55e').length;
-  const amber = shelters.filter(s => getPinColor(s) === '#f59e0b').length;
-  const red = shelters.filter(s => getPinColor(s) === '#ef4444').length;
-  const gray = shelters.filter(s => getPinColor(s) === '#6b7280').length;
+  const reporting = shelters.filter(s => s.latestUpdate !== null).length;
+  const critical = shelters.filter(s => getPinColor(s) === '#ef4444').length;
+  const offline = shelters.filter(s => getPinColor(s) === '#6b7280').length;
 
   return (
     <div style={styles.bar}>
       <div style={styles.left}>
         <h1 style={styles.title}>DPRP</h1>
-        <span style={styles.divider} />
-        <span style={styles.label}>{total} Shelters</span>
       </div>
 
-      <div style={styles.stats}>
-        <Badge color="#22c55e" count={green} label="Good" />
-        <Badge color="#f59e0b" count={amber} label="Moderate" />
-        <Badge color="#ef4444" count={red} label="Critical" />
-        <Badge color="#6b7280" count={gray} label="Offline" />
+      <div style={styles.center}>
+        <span style={styles.summary}>
+          {total} shelters — {reporting} reporting, {critical} critical, {offline} offline
+        </span>
       </div>
 
-      <button onClick={onLogout} style={styles.logout}>Logout</button>
+      <div style={styles.right}>
+        <span style={styles.userName}>{user.name}</span>
+        <button onClick={onLogout} style={styles.logout}>Sign out</button>
+      </div>
     </div>
   );
 };
-
-const Badge = ({ color, count, label }: { color: string; count: number; label: string }) => (
-  <div style={styles.badge}>
-    <span style={{ ...styles.dot, background: color }} />
-    <span style={styles.badgeText}>{count} {label}</span>
-  </div>
-);
 
 const styles: Record<string, React.CSSProperties> = {
   bar: {
@@ -46,7 +39,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '0 20px',
-    height: 52,
+    height: 56,
     background: '#1e293b',
     color: '#fff',
     flexShrink: 0,
@@ -54,7 +47,6 @@ const styles: Record<string, React.CSSProperties> = {
   left: {
     display: 'flex',
     alignItems: 'center',
-    gap: 12,
   },
   title: {
     fontSize: 20,
@@ -62,32 +54,21 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     letterSpacing: '-0.5px',
   },
-  divider: {
-    width: 1,
-    height: 24,
-    background: '#475569',
+  center: {
+    display: 'flex',
+    alignItems: 'center',
   },
-  label: {
+  summary: {
     fontSize: 14,
     color: '#94a3b8',
   },
-  stats: {
-    display: 'flex',
-    gap: 16,
-  },
-  badge: {
+  right: {
     display: 'flex',
     alignItems: 'center',
-    gap: 6,
+    gap: 12,
   },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: '50%',
-    display: 'inline-block',
-  },
-  badgeText: {
-    fontSize: 13,
+  userName: {
+    fontSize: 14,
     color: '#e2e8f0',
   },
   logout: {

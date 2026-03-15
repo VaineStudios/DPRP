@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { login as apiLogin } from '../api/client';
-import { connect, disconnect } from '../api/socket';
 import type { UserResponse } from '../api/client';
 
 interface AuthState {
@@ -31,7 +30,6 @@ export const useAuth = () => {
 
     if (storedToken && storedUser && !isTokenExpired(storedToken)) {
       setState({ token: storedToken, user: JSON.parse(storedUser), isLoading: false });
-      connect(storedToken);
     } else {
       localStorage.removeItem('dprp_admin_token');
       localStorage.removeItem('dprp_admin_user');
@@ -47,13 +45,11 @@ export const useAuth = () => {
     localStorage.setItem('dprp_admin_token', token);
     localStorage.setItem('dprp_admin_user', JSON.stringify(user));
     setState({ token, user, isLoading: false });
-    connect(token);
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('dprp_admin_token');
     localStorage.removeItem('dprp_admin_user');
-    disconnect();
     setState({ token: null, user: null, isLoading: false });
   }, []);
 

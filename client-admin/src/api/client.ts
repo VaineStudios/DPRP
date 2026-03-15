@@ -75,3 +75,8 @@ export const getShelters = async (): Promise<Shelter[]> => {
   const data = await apiFetch<{ shelters: Shelter[] }>('/api/shelters');
   return data.shelters;
 };
+
+export const getShelter = async (id: string): Promise<Shelter> => {
+  const data = await apiFetch<{ shelter: Shelter }>(`/api/shelters/${id}`);
+  return data.shelter;
+};

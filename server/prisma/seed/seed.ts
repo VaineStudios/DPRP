@@ -5,20 +5,26 @@ import { seedUsers } from './users.js';
 const prisma = new PrismaClient();
 
 const main = async (): Promise<void> => {
-  console.log('🌱 Starting DPRP seed...\n');
+  console.log('Starting DPRP seed...\n');
+
+  // Clear dependent tables first (order matters for FK constraints)
+  await prisma.aiRecommendation.deleteMany();
+  await prisma.shelterUpdate.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.shelter.deleteMany();
 
   console.log('[1/2] Seeding shelters...');
-  const shelterCount = await seedShelters(prisma);
+  await seedShelters(prisma);
 
   console.log('\n[2/2] Seeding users...');
-  const userCount = await seedUsers(prisma);
+  await seedUsers(prisma);
 
-  console.log(`\n✅ Seed complete: ${shelterCount} shelters, ${userCount} users`);
+  console.log('\nSeed complete.');
 };
 
 main()
   .catch((e) => {
-    console.error('❌ Seed failed:', e);
+    console.error('Seed failed:', e);
     process.exit(1);
   })
   .finally(async () => {

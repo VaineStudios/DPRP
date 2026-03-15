@@ -7,20 +7,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PARISH_CENTROIDS: Record<string, { lat: number; lng: number }> = {
-  'St. Thomas':            { lat: 17.9714, lng: -76.2356 },
-  'Portland':              { lat: 18.1489, lng: -76.4133 },
-  'St. Mary':              { lat: 18.2419, lng: -76.7011 },
-  'St. Ann':               { lat: 18.2816, lng: -77.2011 },
-  'Trelawny':              { lat: 18.3527, lng: -77.6078 },
-  'St. James':             { lat: 18.4298, lng: -77.9200 },
-  'Hanover':               { lat: 18.4040, lng: -78.1350 },
+  'St. Thomas':            { lat: 17.9714, lng: -76.2874 },
+  'Portland':              { lat: 18.1489, lng: -76.3980 },
+  'St. Mary':              { lat: 18.2469, lng: -76.7776 },
+  'St. Ann':               { lat: 18.3474, lng: -77.2036 },
+  'Trelawny':              { lat: 18.3500, lng: -77.6000 },
+  'St. James':             { lat: 18.4762, lng: -77.9190 },
+  'Hanover':               { lat: 18.4000, lng: -78.1300 },
   'Westmoreland':          { lat: 18.2500, lng: -78.1500 },
-  'St. Elizabeth':         { lat: 18.0667, lng: -77.8333 },
-  'Manchester':            { lat: 18.0333, lng: -77.5000 },
-  'Clarendon':             { lat: 17.9667, lng: -77.2333 },
-  'St. Catherine':         { lat: 18.0333, lng: -76.9333 },
+  'St. Elizabeth':         { lat: 18.0000, lng: -77.7500 },
+  'Manchester':            { lat: 18.0500, lng: -77.5000 },
+  'Clarendon':             { lat: 17.9500, lng: -77.2400 },
+  'St. Catherine':         { lat: 18.0300, lng: -76.9500 },
   'Kingston & St. Andrew': { lat: 18.0179, lng: -76.8099 },
-  'Portmore':              { lat: 17.9500, lng: -76.8833 },
+  'Portmore':              { lat: 17.9576, lng: -76.8777 },
 };
 
 const PARISH_NORMALIZATION: Record<string, string> = {
@@ -54,11 +54,11 @@ const normalizeParish = (raw: string): string => {
   return PARISH_NORMALIZATION[trimmed] ?? trimmed;
 };
 
-const addJitter = (base: number, range: number): number => {
-  return base + (Math.random() - 0.5) * range;
+const addJitter = (base: number): number => {
+  return base + (Math.random() - 0.5) * 0.04; // ±0.02 degrees
 };
 
-export const seedShelters = async (prisma: PrismaClient): Promise<number> => {
+export async function seedShelters(prisma: PrismaClient): Promise<void> {
   const xlsxPath = path.resolve(__dirname, '../../../data/National-Shelter-Listing-2025-2026.xlsx');
   const workbook = XLSX.readFile(xlsxPath);
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -91,29 +91,13 @@ export const seedShelters = async (prisma: PrismaClient): Promise<number> => {
       location: row[3] ? String(row[3]).trim() : null,
       areasServed: row[4] ? String(row[4]).trim() : null,
       facilityType: row[5] ? normalizeFacilityType(String(row[5])) : null,
-      lat: centroid ? addJitter(centroid.lat, 0.15) : null,
-      lng: centroid ? addJitter(centroid.lng, 0.15) : null,
+      lat: centroid ? addJitter(centroid.lat) : null,
+      lng: centroid ? addJitter(centroid.lng) : null,
     });
   }
 
-  // Clear existing shelters
-  await prisma.shelter.deleteMany();
+  await prisma.shelter.createMany({ data: shelters, skipDuplicates: true });
 
-  // Insert in batches
-  const BATCH_SIZE = 100;
-  for (let i = 0; i < shelters.length; i += BATCH_SIZE) {
-    const batch = shelters.slice(i, i + BATCH_SIZE);
-    await prisma.shelter.createMany({ data: batch });
-  }
-
-  console.log(`  Seeded ${shelters.length} shelters`);
-
-  // Log parish breakdown
-  const parishCounts: Record<string, number> = {};
-  for (const s of shelters) {
-    parishCounts[s.parish] = (parishCounts[s.parish] || 0) + 1;
-  }
-  console.log('  Parish breakdown:', parishCounts);
-
-  return shelters.length;
-};
+  const parishes = new Set(shelters.map(s => s.parish));
+  console.log(`  Seeded ${shelters.length} shelters across ${parishes.size} parishes`);
+}

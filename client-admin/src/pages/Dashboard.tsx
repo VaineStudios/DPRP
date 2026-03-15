@@ -1,15 +1,19 @@
 import Map from '../components/Map';
 import StatusBar from '../components/StatusBar';
 import { useShelters } from '../hooks/useShelters';
+import { useSocket } from '../hooks/useSocket';
 import type { UserResponse } from '../api/client';
 
 interface DashboardProps {
   user: UserResponse;
+  token: string;
   onLogout: () => void;
 }
 
-const Dashboard = ({ user: _user, onLogout }: DashboardProps) => {
-  const { shelters, loading, error } = useShelters(true);
+const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
+  const { shelters, loading, error, updateShelter } = useShelters(true);
+
+  useSocket(token, updateShelter);
 
   if (loading) {
     return (
@@ -29,7 +33,7 @@ const Dashboard = ({ user: _user, onLogout }: DashboardProps) => {
 
   return (
     <div style={styles.container}>
-      <StatusBar shelters={shelters} onLogout={onLogout} />
+      <StatusBar shelters={shelters} user={user} onLogout={onLogout} />
       <div style={styles.map}>
         <Map shelters={shelters} />
       </div>

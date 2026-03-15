@@ -41,7 +41,7 @@ const ShelterCard = ({ shelter }: ShelterCardProps) => {
           <p style={styles.time}>Updated {timeSince}</p>
         </>
       ) : (
-        <p style={styles.noData}>No updates received</p>
+        <p style={styles.noData}>Awaiting first report</p>
       )}
     </div>
   );
@@ -58,8 +58,7 @@ const Stat = ({ label, level, invert = false }: { label: string; level: number; 
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
-    minWidth: 220,
-    maxWidth: 280,
+    width: 280,
   },
   colorBar: {
     height: 4,
@@ -67,7 +66,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 8,
   },
   name: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 700,
     color: '#1e293b',
     margin: 0,

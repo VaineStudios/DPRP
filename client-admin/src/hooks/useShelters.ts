@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getShelters } from '../api/client';
-import { getSocket } from '../api/socket';
 import type { Shelter, ShelterUpdate } from '../api/client';
 
 export const useShelters = (isAuthenticated: boolean) => {
-  const [shelters, setShelters] = useState<Shelter[]>([]);
+  const [shelterMap, setShelterMap] = useState<Map<string, Shelter>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -12,7 +11,11 @@ export const useShelters = (isAuthenticated: boolean) => {
     try {
       setError(null);
       const data = await getShelters();
-      setShelters(data);
+      const map = new Map<string, Shelter>();
+      for (const s of data) {
+        map.set(s.id, s);
+      }
+      setShelterMap(map);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load shelters');
     } finally {
@@ -25,24 +28,17 @@ export const useShelters = (isAuthenticated: boolean) => {
     fetchShelters();
   }, [isAuthenticated, fetchShelters]);
 
-  // Listen for real-time shelter updates via Socket.io
-  useEffect(() => {
-    if (!isAuthenticated) return;
+  const updateShelter = useCallback((shelterId: string, update: ShelterUpdate) => {
+    setShelterMap(prev => {
+      const shelter = prev.get(shelterId);
+      if (!shelter) return prev;
+      const next = new Map(prev);
+      next.set(shelterId, { ...shelter, latestUpdate: update });
+      return next;
+    });
+  }, []);
 
-    const socket = getSocket();
-    if (!socket) return;
+  const shelters = Array.from(shelterMap.values());
 
-    const handleUpdate = (data: { shelterId: string; update: ShelterUpdate }) => {
-      setShelters(prev =>
-        prev.map(s =>
-          s.id === data.shelterId ? { ...s, latestUpdate: data.update } : s
-        )
-      );
-    };
-
-    socket.on('shelter:updated', handleUpdate);
-    return () => { socket.off('shelter:updated', handleUpdate); };
-  }, [isAuthenticated]);
-
-  return { shelters, loading, error, refetch: fetchShelters };
+  return { shelters, shelterMap, loading, error, updateShelter, refetch: fetchShelters };
 };
