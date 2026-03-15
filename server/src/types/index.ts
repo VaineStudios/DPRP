@@ -1,4 +1,4 @@
-import { UserRole, Priority, RecommendationType } from '@prisma/client';
+import { UserRole, Priority, RecommendationType, DisasterStatus } from '@prisma/client';
 
 export interface ApiResponse<T> {
   data?: T;
@@ -31,4 +31,27 @@ export interface ShelterUpdateRequest {
   notes?: string;
 }
 
-export type { UserRole, Priority, RecommendationType };
+export interface CreateDisasterRequest {
+  name: string;
+  category?: number;
+  windSpeedMph?: number;
+  affectedParishes: string[];
+  status?: DisasterStatus;
+  landfallDate?: string;
+  startDate: string;
+  endDate?: string;
+  notes?: string;
+}
+
+export interface DisasterStatsResponse {
+  totalUpdates: number;
+  sheltersReporting: number;
+  avgCapacity: number;
+  avgWater: number;
+  avgFood: number;
+  avgMedical: number;
+  criticalCapacity: number;
+  criticalWater: number;
+}
+
+export type { UserRole, Priority, RecommendationType, DisasterStatus };

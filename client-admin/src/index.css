@@ -43,3 +43,17 @@ button {
     transform: translateX(0);
   }
 }
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeHighlight {
+  from { box-shadow: 0 0 0 2px #3b82f6; }
+  to { box-shadow: 0 0 0 0px transparent; }
+}

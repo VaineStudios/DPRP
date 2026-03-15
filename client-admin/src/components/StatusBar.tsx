@@ -1,13 +1,23 @@
-import type { Shelter, UserResponse } from '../api/client';
+import type { Shelter, UserResponse, DisasterEvent } from '../api/client';
 import { getPinColor } from '../utils/shelter';
 
 interface StatusBarProps {
   shelters: Shelter[];
   user: UserResponse;
   onLogout: () => void;
+  activeEvent: DisasterEvent | null;
+  activeTab: 'response' | 'preparedness';
+  onTabChange: (tab: 'response' | 'preparedness') => void;
 }
 
-const StatusBar = ({ shelters, user, onLogout }: StatusBarProps) => {
+const statusColors: Record<string, string> = {
+  PREPARING: '#3b82f6',
+  ACTIVE: '#ef4444',
+  RECOVERY: '#f59e0b',
+  CLOSED: '#6b7280',
+};
+
+const StatusBar = ({ shelters, user, onLogout, activeEvent, activeTab, onTabChange }: StatusBarProps) => {
   const total = shelters.length;
   const colors = shelters.map(getPinColor);
   const available = colors.filter(c => c === '#22c55e').length;
@@ -19,15 +29,45 @@ const StatusBar = ({ shelters, user, onLogout }: StatusBarProps) => {
     <div style={styles.bar}>
       <div style={styles.left}>
         <h1 style={styles.title}>DPRP</h1>
+        <div style={styles.tabs}>
+          <button
+            style={activeTab === 'response' ? styles.tabActive : styles.tab}
+            onClick={() => onTabChange('response')}
+          >
+            Live response
+          </button>
+          <button
+            style={activeTab === 'preparedness' ? styles.tabActive : styles.tab}
+            onClick={() => onTabChange('preparedness')}
+          >
+            Preparedness
+          </button>
+        </div>
       </div>
 
       <div style={styles.center}>
-        <span style={styles.total}>{total} shelters</span>
+        {activeEvent ? (
+          <div style={styles.eventInfo}>
+            <span style={{
+              ...styles.eventBadge,
+              background: statusColors[activeEvent.status] || '#6b7280',
+            }}>
+              {activeEvent.status}
+            </span>
+            <span style={styles.eventName}>
+              {activeEvent.name}
+              {activeEvent.category ? ` (Cat ${activeEvent.category})` : ''}
+            </span>
+          </div>
+        ) : (
+          <span style={styles.noEvent}>No active disaster event</span>
+        )}
         <span style={styles.sep}>&mdash;</span>
-        <StatusDot color="#22c55e" count={available} label="available" />
-        <StatusDot color="#f59e0b" count={moderate} label="moderate" />
-        <StatusDot color="#ef4444" count={critical} label="critical" />
-        <StatusDot color="#6b7280" count={offline} label="offline" />
+        <span style={styles.total}>{total} shelters</span>
+        <StatusDot color="#22c55e" count={available} label="ok" />
+        <StatusDot color="#f59e0b" count={moderate} label="mod" />
+        <StatusDot color="#ef4444" count={critical} label="crit" />
+        <StatusDot color="#6b7280" count={offline} label="off" />
       </div>
 
       <div style={styles.right}>
@@ -60,6 +100,7 @@ const styles: Record<string, React.CSSProperties> = {
   left: {
     display: 'flex',
     alignItems: 'center',
+    gap: 16,
   },
   title: {
     fontSize: 20,
@@ -67,10 +108,58 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     letterSpacing: '-0.5px',
   },
+  tabs: {
+    display: 'flex',
+    gap: 4,
+  },
+  tab: {
+    padding: '4px 12px',
+    fontSize: 13,
+    fontWeight: 500,
+    color: '#94a3b8',
+    background: 'transparent',
+    border: '1px solid #475569',
+    borderRadius: 4,
+    cursor: 'pointer',
+  },
+  tabActive: {
+    padding: '4px 12px',
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#fff',
+    background: '#3b82f6',
+    border: '1px solid #3b82f6',
+    borderRadius: 4,
+    cursor: 'pointer',
+  },
   center: {
     display: 'flex',
     alignItems: 'center',
     gap: 4,
+  },
+  eventInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+  eventBadge: {
+    padding: '2px 8px',
+    fontSize: 11,
+    fontWeight: 700,
+    borderRadius: 4,
+    color: '#fff',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+  },
+  eventName: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: '#e2e8f0',
+  },
+  noEvent: {
+    fontSize: 13,
+    color: '#94a3b8',
+    fontStyle: 'italic',
   },
   total: {
     fontSize: 14,
@@ -84,8 +173,8 @@ const styles: Record<string, React.CSSProperties> = {
   dotGroup: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 4,
-    marginLeft: 12,
+    gap: 3,
+    marginLeft: 8,
   },
   dot: {
     display: 'inline-block',
@@ -94,12 +183,12 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '50%',
   },
   dotCount: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 700,
     color: '#e2e8f0',
   },
   dotLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#94a3b8',
   },
   right: {
