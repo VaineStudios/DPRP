@@ -2,5 +2,19 @@
   "name": "dprp",
   "version": "1.0.0",
   "description": "Disaster Preparedness & Response Platform for Jamaica",
-  "private": true
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n server,shelter,admin -c blue,green,magenta \"npm run dev --prefix server\" \"npm run dev --prefix client-shelter\" \"npm run dev --prefix client-admin\"",
+    "dev:server": "npm run dev --prefix server",
+    "dev:shelter": "npm run dev --prefix client-shelter",
+    "dev:admin": "npm run dev --prefix client-admin",
+    "build": "npm run build --prefix server && npm run build --prefix client-shelter && npm run build --prefix client-admin",
+    "seed": "npm run seed --prefix server",
+    "db:migrate": "npm run db:migrate --prefix server",
+    "db:studio": "npm run db:studio --prefix server",
+    "install:all": "npm install --prefix server && npm install --prefix client-shelter && npm install --prefix client-admin"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
 }
