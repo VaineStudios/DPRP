@@ -5,6 +5,7 @@ import cors from 'cors';
 import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import { Server } from 'socket.io';
 import authRoutes from './routes/auth.js';
 import shelterRoutes from './routes/shelters.js';
@@ -50,16 +51,23 @@ app.use('/shelter', express.static(path.join(clientDir, 'client-shelter')));
 app.use('/resident', express.static(path.join(clientDir, 'client-resident')));
 app.use(express.static(path.join(clientDir, 'client-admin')));
 
-// SPA fallback — serve index.html for client-side routing
-app.get('/shelter/*', (_req, res) => {
-  res.sendFile(path.join(clientDir, 'client-shelter', 'index.html'));
+// SPA fallback — serve index.html for client-side routing (only if client builds exist)
+const adminIndex = path.join(clientDir, 'client-admin', 'index.html');
+const shelterIndex = path.join(clientDir, 'client-shelter', 'index.html');
+const residentIndex = path.join(clientDir, 'client-resident', 'index.html');
+
+app.get('/shelter/*', (_req, res, next) => {
+  if (fs.existsSync(shelterIndex)) return res.sendFile(shelterIndex);
+  next();
 });
-app.get('/resident/*', (_req, res) => {
-  res.sendFile(path.join(clientDir, 'client-resident', 'index.html'));
+app.get('/resident/*', (_req, res, next) => {
+  if (fs.existsSync(residentIndex)) return res.sendFile(residentIndex);
+  next();
 });
 app.get('*', (_req, res, next) => {
   if (_req.path.startsWith('/api/') || _req.path.startsWith('/socket.io/')) return next();
-  res.sendFile(path.join(clientDir, 'client-admin', 'index.html'));
+  if (fs.existsSync(adminIndex)) return res.sendFile(adminIndex);
+  res.json({ status: 'API is running. Client apps not yet deployed — run the GitHub Actions workflow.' });
 });
 
 // Global error handler — catches anything that slips through route-level try/catch
