@@ -39,15 +39,11 @@ jobs:
 
       - name: Install & build client-resident
         working-directory: client-resident
-        run: npm ci && npm run build
-        env:
-          VITE_BASE_PATH: /resident/
+        run: npm ci && tsc -b && npx vite build --base /resident/
 
       - name: Install & build client-shelter
         working-directory: client-shelter
-        run: npm ci && npm run build
-        env:
-          VITE_BASE_PATH: /shelter/
+        run: npm ci && tsc -b && npx vite build --base /shelter/
 
       # ── Configure SSH ─────────────────────────────────────
       - name: Setup SSH key
