@@ -8,6 +8,7 @@ export const connect = (token: string): Socket => {
   if (socket?.connected) return socket;
 
   socket = io(API_URL, {
+    auth: { token },
     autoConnect: false,
     transports: ['websocket', 'polling'],
   });
