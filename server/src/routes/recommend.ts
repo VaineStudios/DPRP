@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import prisma from '../lib/prisma.js';
+import { asyncHandler } from '../middleware/asyncHandler.js';
 import { rankShelters } from '../services/geolocation.js';
 
 const router = Router();
 
 // GET /api/recommend?lat=&lng= — public, no auth
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get('/', asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const latStr = req.query.lat as string | undefined;
   const lngStr = req.query.lng as string | undefined;
 
@@ -47,6 +48,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   const ranked = rankShelters(shelters, lat, lng);
 
   res.json({ shelters: ranked });
-});
+}));
 
 export default router;

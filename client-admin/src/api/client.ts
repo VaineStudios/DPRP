@@ -31,6 +31,7 @@ export interface ShelterUpdateEvent {
     lat: number | null;
     lng: number | null;
   };
+  disasterEventId: string | null;
 }
 
 export interface Shelter {
@@ -86,7 +87,48 @@ export interface AiPredictions {
     quantity: string;
     rationale: string;
   }>;
-  timeline: Record<string, unknown>;
+  timeline: {
+    hoursToFirstCapacity?: number;
+    hoursToResourceDepletion?: number;
+    milestones?: Array<{ hour: number; event: string; severity: 'green' | 'amber' | 'red' }>;
+    summary?: string;
+    [key: string]: unknown;
+  };
+}
+
+export interface ScenarioParams {
+  category: number;
+  windSpeedMph: number;
+  affectedParishes: string[];
+  name?: string;
+}
+
+export interface TimelineEntry {
+  hour: number;
+  updateCount: number;
+  shelterCount: number;
+  avgCapacity: number;
+  avgWater: number;
+  avgFood: number;
+  avgMedical: number;
+  criticalShelters: number;
+  criticalResources: number;
+}
+
+export interface TimelineSummary {
+  totalUpdates: number;
+  sheltersReporting: number;
+  peakAvgCapacity: number;
+  criticalCount: number;
+  criticalResourceCount: number;
+  timeToFiftyPercent: number | null;
+  timeToEightyPercent: number | null;
+  mostAffectedParish: string | null;
+}
+
+export interface EventTimelineResponse {
+  timeline: TimelineEntry[];
+  summary: TimelineSummary;
 }
 
 export interface AiPredictResponse {
@@ -130,8 +172,9 @@ export const login = (email: string, password: string): Promise<LoginResponse> =
     body: JSON.stringify({ email, password }),
   });
 
-export const getShelters = async (): Promise<Shelter[]> => {
-  const data = await apiFetch<{ shelters: Shelter[] }>('/api/shelters');
+export const getShelters = async (eventId?: string): Promise<Shelter[]> => {
+  const params = eventId ? `?eventId=${encodeURIComponent(eventId)}` : '';
+  const data = await apiFetch<{ shelters: Shelter[] }>(`/api/shelters${params}`);
   return data.shelters;
 };
 
@@ -177,6 +220,13 @@ export const predictPreparedness = async (disasterEventId: string): Promise<AiPr
   });
 };
 
+export const predictScenario = async (scenario: ScenarioParams): Promise<AiPredictResponse> => {
+  return apiFetch('/api/ai/predict', {
+    method: 'POST',
+    body: JSON.stringify({ scenario }),
+  });
+};
+
 export const getRecommendations = async (
   eventId: string,
   type?: 'RESPONSE' | 'PREPAREDNESS'
@@ -185,4 +235,38 @@ export const getRecommendations = async (
   if (type) params.set('type', type);
   const data = await apiFetch<{ recommendations: AiRecommendation[] }>(`/api/ai/recommendations?${params}`);
   return data.recommendations;
+};
+
+// Disaster timeline endpoint
+export const getEventTimeline = async (eventId: string): Promise<EventTimelineResponse> => {
+  return apiFetch(`/api/disasters/${eventId}/timeline`);
+};
+
+// Broadcast types & endpoints
+export interface BroadcastMessage {
+  id: string;
+  message: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  targetParishes: string[];
+  sentBy: string;
+  createdAt: string;
+}
+
+export const sendBroadcast = async (data: {
+  message: string;
+  targetParishes?: string[];
+  priority?: 'HIGH' | 'CRITICAL';
+  disasterEventId?: string;
+}): Promise<BroadcastMessage> => {
+  const res = await apiFetch<{ broadcast: BroadcastMessage }>('/api/broadcasts', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res.broadcast;
+};
+
+export const getBroadcasts = async (limit?: number): Promise<BroadcastMessage[]> => {
+  const params = limit ? `?limit=${limit}` : '';
+  const data = await apiFetch<{ broadcasts: BroadcastMessage[] }>(`/api/broadcasts${params}`);
+  return data.broadcasts;
 };

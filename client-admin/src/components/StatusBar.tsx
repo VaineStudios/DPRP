@@ -8,6 +8,7 @@ interface StatusBarProps {
   activeEvent: DisasterEvent | null;
   activeTab: 'response' | 'preparedness';
   onTabChange: (tab: 'response' | 'preparedness') => void;
+  irisAnalyzing?: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -17,7 +18,7 @@ const statusColors: Record<string, string> = {
   CLOSED: '#6b7280',
 };
 
-const StatusBar = ({ shelters, user, onLogout, activeEvent, activeTab, onTabChange }: StatusBarProps) => {
+const StatusBar = ({ shelters, user, onLogout, activeEvent, activeTab, onTabChange, irisAnalyzing }: StatusBarProps) => {
   const total = shelters.length;
   const colors = shelters.map(getPinColor);
   const available = colors.filter(c => c === '#22c55e').length;
@@ -71,6 +72,10 @@ const StatusBar = ({ shelters, user, onLogout, activeEvent, activeTab, onTabChan
       </div>
 
       <div style={styles.right}>
+        <span style={irisAnalyzing ? styles.irisAnalyzing : styles.irisActive}>
+          <span style={irisAnalyzing ? styles.irisAmberDot : styles.irisGreenDot} />
+          {irisAnalyzing ? 'IRIS: Analyzing...' : 'IRIS: Active'}
+        </span>
         <span style={styles.userName}>{user.name}</span>
         <button onClick={onLogout} style={styles.logout}>Sign out</button>
       </div>
@@ -202,6 +207,42 @@ const styles: Record<string, React.CSSProperties> = {
   userName: {
     fontSize: 14,
     color: '#e2e8f0',
+  },
+  irisActive: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#4ade80',
+    marginRight: 8,
+  },
+  irisAnalyzing: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#fbbf24',
+    marginRight: 8,
+  },
+  irisGreenDot: {
+    display: 'inline-block',
+    width: 7,
+    height: 7,
+    borderRadius: '50%',
+    background: '#4ade80',
+    boxShadow: '0 0 6px #4ade80',
+    animation: 'irisPulse 2s ease-in-out infinite',
+  },
+  irisAmberDot: {
+    display: 'inline-block',
+    width: 7,
+    height: 7,
+    borderRadius: '50%',
+    background: '#fbbf24',
+    boxShadow: '0 0 6px #fbbf24',
+    animation: 'irisPulse 1s ease-in-out infinite',
   },
   logout: {
     padding: '6px 16px',

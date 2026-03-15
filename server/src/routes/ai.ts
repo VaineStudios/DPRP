@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import type { Server } from 'socket.io';
 import prisma from '../lib/prisma.js';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { asyncHandler } from '../middleware/asyncHandler.js';
 import { analyzeNetwork, predictPreparedness } from '../services/ai.js';
 import type { Priority } from '@prisma/client';
 
@@ -30,7 +31,7 @@ export const createAiRouter = (io: Server) => {
   router.use(authenticate, authorize('ADMIN'));
 
   // POST /api/ai/analyze — analyze shelter network during active disaster
-  router.post('/analyze', async (req: Request, res: Response): Promise<void> => {
+  router.post('/analyze', asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { disasterEventId } = req.body;
 
     if (!disasterEventId) {
@@ -113,23 +114,57 @@ export const createAiRouter = (io: Server) => {
         error: err instanceof Error ? err.message : 'AI analysis failed',
       });
     }
-  });
+  }));
 
-  // POST /api/ai/predict — preparedness predictions for approaching event
-  router.post('/predict', async (req: Request, res: Response): Promise<void> => {
-    const { disasterEventId } = req.body;
+  // POST /api/ai/predict — preparedness predictions for approaching event or ad-hoc scenario
+  router.post('/predict', asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { disasterEventId, scenario } = req.body;
 
-    if (!disasterEventId) {
-      res.status(400).json({ error: 'disasterEventId is required' });
+    // Either disasterEventId OR scenario is required
+    if (!disasterEventId && !scenario) {
+      res.status(400).json({ error: 'disasterEventId or scenario is required' });
       return;
     }
 
-    const event = await prisma.disasterEvent.findUnique({
-      where: { id: disasterEventId },
-    });
-    if (!event) {
-      res.status(404).json({ error: 'Disaster event not found' });
-      return;
+    let eventForPrediction: {
+      name: string;
+      category: number | null;
+      windSpeedMph: number | null;
+      affectedParishes: string[];
+      landfallDate: Date | null;
+      startDate: Date;
+      endDate: Date | null;
+      status: string;
+    };
+    let storeEventId: string | null = null;
+
+    if (disasterEventId) {
+      const event = await prisma.disasterEvent.findUnique({
+        where: { id: disasterEventId },
+      });
+      if (!event) {
+        res.status(404).json({ error: 'Disaster event not found' });
+        return;
+      }
+      eventForPrediction = event;
+      storeEventId = disasterEventId;
+    } else {
+      // Ad-hoc scenario mode
+      const { category, windSpeedMph, affectedParishes, name } = scenario;
+      if (!affectedParishes?.length) {
+        res.status(400).json({ error: 'scenario.affectedParishes is required' });
+        return;
+      }
+      eventForPrediction = {
+        name: name || `Scenario (Cat ${category || 'N/A'})`,
+        category: category ?? null,
+        windSpeedMph: windSpeedMph ?? null,
+        affectedParishes,
+        landfallDate: null,
+        startDate: new Date(),
+        endDate: null,
+        status: 'PREPARING',
+      };
     }
 
     // Fetch historical events (CLOSED) with their update timelines
@@ -146,55 +181,59 @@ export const createAiRouter = (io: Server) => {
     });
 
     try {
-      const predictions = await predictPreparedness(event, historicalEvents);
+      const predictions = await predictPreparedness(
+        eventForPrediction as Parameters<typeof predictPreparedness>[0],
+        historicalEvents,
+      );
 
-      // Store predictions as recommendations
+      // Store predictions as recommendations (only if linked to a real event)
       const stored = [];
-      for (const pred of predictions.predictions) {
-        const rec = await prisma.aiRecommendation.create({
-          data: {
-            disasterEventId,
-            type: 'PREPAREDNESS',
-            priority: 'HIGH',
-            recommendation: `${pred.shelterName} estimated to reach capacity at ${pred.estimatedCapacityReachTime}`,
-            reasoning: `Confidence: ${pred.confidence}. Based on historical patterns from similar events.`,
-          },
-        });
-        stored.push(rec);
-      }
-
-      for (const pos of predictions.prePositioning) {
-        // Validate shelterId exists before linking — Claude may hallucinate IDs
-        let validShelterId: string | null = null;
-        if (pos.shelterId) {
-          const shelter = await prisma.shelter.findUnique({ where: { id: pos.shelterId }, select: { id: true } });
-          if (shelter) validShelterId = shelter.id;
+      if (storeEventId) {
+        for (const pred of predictions.predictions) {
+          const rec = await prisma.aiRecommendation.create({
+            data: {
+              disasterEventId: storeEventId,
+              type: 'PREPAREDNESS',
+              priority: 'HIGH',
+              recommendation: `${pred.shelterName} estimated to reach capacity at ${pred.estimatedCapacityReachTime}`,
+              reasoning: `Confidence: ${pred.confidence}. Based on IRIS historical modeling from similar events.`,
+            },
+          });
+          stored.push(rec);
         }
 
-        const rec = await prisma.aiRecommendation.create({
-          data: {
-            disasterEventId,
-            shelterId: validShelterId,
-            type: 'PREPAREDNESS',
-            priority: 'MEDIUM',
-            recommendation: `Pre-position ${pos.quantity} ${pos.resource} supplies`,
-            reasoning: pos.rationale,
-          },
-        });
-        stored.push(rec);
+        for (const pos of predictions.prePositioning) {
+          let validShelterId: string | null = null;
+          if (pos.shelterId) {
+            const shelter = await prisma.shelter.findUnique({ where: { id: pos.shelterId }, select: { id: true } });
+            if (shelter) validShelterId = shelter.id;
+          }
+
+          const rec = await prisma.aiRecommendation.create({
+            data: {
+              disasterEventId: storeEventId,
+              shelterId: validShelterId,
+              type: 'PREPAREDNESS',
+              priority: 'MEDIUM',
+              recommendation: `Pre-position ${pos.quantity} ${pos.resource} supplies`,
+              reasoning: pos.rationale,
+            },
+          });
+          stored.push(rec);
+        }
       }
 
       res.json({ predictions, stored });
     } catch (err) {
-      console.error('AI predict error:', err);
+      console.error('IRIS predict error:', err);
       res.status(500).json({
-        error: err instanceof Error ? err.message : 'AI prediction failed',
+        error: err instanceof Error ? err.message : 'IRIS prediction failed',
       });
     }
-  });
+  }));
 
   // GET /api/ai/recommendations — retrieve stored recommendations
-  router.get('/recommendations', async (req: Request, res: Response): Promise<void> => {
+  router.get('/recommendations', asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { eventId, type } = req.query;
 
     if (!eventId) {
@@ -228,7 +267,7 @@ export const createAiRouter = (io: Server) => {
     });
 
     res.json({ recommendations });
-  });
+  }));
 
   return router;
 };

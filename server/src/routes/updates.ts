@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import prisma from '../lib/prisma.js';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { asyncHandler } from '../middleware/asyncHandler.js';
 import { emitShelterUpdate } from '../services/socket.js';
 import type { ShelterUpdateRequest } from '../types/index.js';
 import type { Server } from 'socket.io';
@@ -14,7 +15,7 @@ export const createUpdateRouter = (io: Server) => {
     '/',
     authenticate,
     authorize('SHELTER_MANAGER'),
-    async (req: Request, res: Response): Promise<void> => {
+    asyncHandler(async (req: Request, res: Response): Promise<void> => {
       const { shelterId, capacityLevel, waterLevel, foodLevel, medicalLevel, notes } =
         req.body as ShelterUpdateRequest;
 
@@ -34,31 +35,57 @@ export const createUpdateRouter = (io: Server) => {
         return;
       }
 
-      // Create update
-      const update = await prisma.shelterUpdate.create({
-        data: {
-          shelterId,
-          capacityLevel,
-          waterLevel,
-          foodLevel,
-          medicalLevel,
-          notes: notes ?? null,
-          reportedById: req.user!.userId,
-        },
+      // Validate user exists (JWT may reference a deleted/stale user)
+      const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+      if (!user) {
+        res.status(401).json({ error: 'User account not found — please log in again' });
+        return;
+      }
+
+      // Find active disaster event to link this update
+      const activeEvent = await prisma.disasterEvent.findFirst({
+        where: { status: 'ACTIVE' },
+        select: { id: true },
       });
 
+      // Create update
+      let update;
+      try {
+        update = await prisma.shelterUpdate.create({
+          data: {
+            shelterId,
+            capacityLevel,
+            waterLevel,
+            foodLevel,
+            medicalLevel,
+            notes: notes ?? null,
+            reportedById: user.id,
+            disasterEventId: activeEvent?.id ?? null,
+          },
+        });
+      } catch (err) {
+        console.error('Failed to create shelter update:', err);
+        res.status(500).json({ error: 'Failed to save update' });
+        return;
+      }
+
       // Emit to admin room
-      emitShelterUpdate(io, { shelterId, update, shelter });
+      emitShelterUpdate(io, {
+        shelterId,
+        update,
+        shelter,
+        disasterEventId: activeEvent?.id ?? null,
+      });
 
       res.status(201).json({ update });
-    }
+    })
   );
 
   // GET /api/updates/:shelterId — update history
   router.get(
     '/:shelterId',
     authenticate,
-    async (req: Request<{ shelterId: string }>, res: Response): Promise<void> => {
+    asyncHandler(async (req: Request<{ shelterId: string }>, res: Response): Promise<void> => {
       const { shelterId } = req.params;
 
       const shelter = await prisma.shelter.findUnique({ where: { id: shelterId } });
@@ -74,7 +101,7 @@ export const createUpdateRouter = (io: Server) => {
       });
 
       res.json({ updates });
-    }
+    })
   );
 
   return router;

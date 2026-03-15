@@ -51,6 +51,7 @@ model User {
   shelter        Shelter?         @relation(fields: [shelterId], references: [id])
   updates        ShelterUpdate[]
   acknowledged   AiRecommendation[] @relation("AcknowledgedBy")
+  broadcasts     Broadcast[]
   createdAt      DateTime         @default(now()) @map("created_at")
 
   @@map("users")
@@ -88,6 +89,7 @@ model DisasterEvent {
   notes            String?
   updates          ShelterUpdate[]
   recommendations  AiRecommendation[]
+  broadcasts       Broadcast[]
   createdAt        DateTime          @default(now()) @map("created_at")
 
   @@map("disaster_events")
@@ -131,4 +133,19 @@ model AiRecommendation {
 
   @@index([disasterEventId, type])
   @@map("ai_recommendations")
+}
+
+model Broadcast {
+  id               String          @id @default(uuid())
+  disasterEventId  String?         @map("disaster_event_id")
+  disasterEvent    DisasterEvent?  @relation(fields: [disasterEventId], references: [id])
+  message          String
+  targetParishes   String[]        @map("target_parishes")
+  priority         Priority        @default(HIGH)
+  sentById         String          @map("sent_by")
+  sentBy           User            @relation(fields: [sentById], references: [id])
+  createdAt        DateTime        @default(now()) @map("created_at")
+
+  @@index([disasterEventId])
+  @@map("broadcasts")
 }

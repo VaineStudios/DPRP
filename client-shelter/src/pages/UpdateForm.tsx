@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import IconSelector from '../components/IconSelector';
 import ConnectionStatus from '../components/ConnectionStatus';
+import BroadcastAlert from '../components/BroadcastAlert';
 import { useOfflineQueue } from '../hooks/useOfflineQueue';
 import { useLatestUpdate } from '../hooks/useLatestUpdate';
 import type { SelectedShelter } from '../hooks/useShelter';
@@ -120,6 +121,9 @@ const UpdateForm = ({ shelter, onClearShelter, onLogout }: UpdateFormProps) => {
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
       <ConnectionStatus queueLength={queueLength} isFlushing={isFlushing} />
+
+      {/* Broadcast alerts from admin */}
+      <BroadcastAlert />
 
       {/* Header */}
       <div style={styles.header}>

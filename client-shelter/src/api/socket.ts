@@ -14,11 +14,14 @@ export const connect = (token: string): Socket => {
 
   socket.connect();
 
-  socket.on('connect', () => {
-    socket?.emit('join:shelter', { token });
-  });
-
   return socket;
+};
+
+export const joinShelter = (shelterId: string): void => {
+  const token = localStorage.getItem('dprp_token');
+  if (socket && token) {
+    socket.emit('join:shelter', { token, shelterId });
+  }
 };
 
 export const disconnect = (): void => {

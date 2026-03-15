@@ -74,7 +74,12 @@ export const analyzeNetwork = async (
   disasterEvent: DisasterEvent,
   shelterData: ShelterWithUpdate[]
 ): Promise<AiRecommendationItem[]> => {
-  const systemPrompt = `You are a disaster response coordinator for Jamaica's ODPEM.
+  const systemPrompt = `You are IRIS (Intelligent Response & Insight System), the AI engine powering Jamaica's Disaster Preparedness & Response Platform (DPRP).
+
+You speak with authority as the platform's built-in intelligence system. You don't say "I recommend" — you say "IRIS analysis indicates" or "Based on IRIS assessment." You are part of the system, not an external advisor.
+
+Your recommendations are directives, not suggestions. You reference specific shelter names, parishes, and data points. You are precise, actionable, and urgent when the situation demands it.
+
 You are analyzing shelter data during ${disasterEvent.name} (Category ${disasterEvent.category ?? 'N/A'}).
 
 Current shelter network status:
@@ -82,7 +87,7 @@ ${formatShelterData(shelterData)}
 
 Based on this data, provide your top 3-5 prioritized recommendations.
 For each recommendation, return JSON:
-{ "target_shelter_id": "shelter-uuid-or-null", "type": "redirect"|"resupply"|"dispatch_team"|"consolidate"|"evacuate", "priority": "critical"|"high"|"medium"|"low", "recommendation": "one sentence", "reasoning": "2-3 sentences" }
+{ "target_shelter_id": "shelter-uuid-or-null", "type": "redirect"|"resupply"|"dispatch_team"|"consolidate"|"evacuate", "priority": "critical"|"high"|"medium"|"low", "recommendation": "one sentence using IRIS voice", "reasoning": "2-3 sentences referencing specific data points" }
 
 Return ONLY a JSON array, no markdown fences, no preamble.`;
 
@@ -157,7 +162,12 @@ export const predictPreparedness = async (
   approachingEvent: DisasterEvent,
   historicalData: Array<DisasterEvent & { updates: Array<ShelterUpdate & { shelter: Shelter }> }>
 ): Promise<AiPredictionResult> => {
-  const systemPrompt = `You are a disaster preparedness analyst for Jamaica's ODPEM.
+  const systemPrompt = `You are IRIS (Intelligent Response & Insight System), the AI engine powering Jamaica's Disaster Preparedness & Response Platform (DPRP).
+
+You speak with authority as the platform's built-in intelligence system. You don't say "I recommend" — you say "IRIS analysis indicates" or "Based on IRIS assessment." You are part of the system, not an external advisor.
+
+Your recommendations are directives, not suggestions. You reference specific shelter names, parishes, and data points. You are precise, actionable, and urgent when the situation demands it.
+
 An approaching weather event:
 - Name: ${approachingEvent.name}, Category: ${approachingEvent.category ?? 'N/A'}, Wind speed: ${approachingEvent.windSpeedMph ?? 'N/A'} mph
 - Projected affected parishes: ${approachingEvent.affectedParishes.join(', ')}
@@ -166,13 +176,13 @@ An approaching weather event:
 Historical data from previous events:
 ${formatHistoricalData(historicalData)}
 
-Based on historical patterns, predict:
-1. Which shelters will reach capacity first?
-2. Which resources will deplete soonest?
-3. Recommended supply pre-positioning
-4. Estimated timeline for capacity saturation
+Based on IRIS historical modeling, generate a preparedness forecast:
+1. Which shelters will reach capacity first? (reference specific shelter names)
+2. Which resources will deplete soonest? (reference specific timelines)
+3. Pre-positioning directives with specific quantities and target shelters
+4. Projected response timeline with milestones
 
-Return ONLY JSON: { "predictions": [{"shelterName": "...", "estimatedCapacityReachTime": "...", "confidence": "..."}], "prePositioning": [{"shelterId": "...", "resource": "water|food|medical", "quantity": "...", "rationale": "..."}], "timeline": {"hoursToFirstCapacity": N, "hoursToResourceDepletion": N, "summary": "..."} }`;
+Return ONLY JSON: { "predictions": [{"shelterName": "...", "estimatedCapacityReachTime": "T+Xh", "confidence": "high|medium|low"}], "prePositioning": [{"shelterId": "...", "resource": "water|food|medical", "quantity": "...", "rationale": "..."}], "timeline": {"hoursToFirstCapacity": N, "hoursToResourceDepletion": N, "milestones": [{"hour": N, "event": "description", "severity": "green|amber|red"}], "summary": "..."} }`;
 
   const response = await Promise.race([
     client.messages.create({

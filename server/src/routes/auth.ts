@@ -3,12 +3,13 @@ import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../lib/prisma.js';
 import { signToken } from '../utils/jwt.js';
+import { asyncHandler } from '../middleware/asyncHandler.js';
 import type { LoginRequest, RegisterRequest } from '../types/index.js';
 
 const router = Router();
 
 // POST /api/auth/register
-router.post('/register', async (req: Request, res: Response): Promise<void> => {
+router.post('/register', asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { name, email, password, role } = req.body as RegisterRequest;
 
   // Validation
@@ -46,10 +47,10 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     token,
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
   });
-});
+}));
 
 // POST /api/auth/login
-router.post('/login', async (req: Request, res: Response): Promise<void> => {
+router.post('/login', asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body as LoginRequest;
 
   if (!email || !password) {
@@ -80,6 +81,6 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       shelterId: user.shelterId,
     },
   });
-});
+}));
 
 export default router;

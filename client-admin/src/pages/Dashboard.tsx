@@ -2,11 +2,12 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import Map from '../components/Map';
 import type { FlyTarget } from '../components/Map';
 import StatusBar from '../components/StatusBar';
-import AiPanel from '../components/AiPanel';
+import IrisPanel from '../components/IrisPanel';
 import StatCards from '../components/dashboard/StatCards';
 import ParishBreakdown from '../components/dashboard/ParishBreakdown';
 import CriticalAlerts from '../components/dashboard/CriticalAlerts';
 import CapacityTrend from '../components/dashboard/CapacityTrend';
+import BroadcastComposer from '../components/BroadcastComposer';
 import ToastContainer from '../components/Toast';
 import type { ToastItem } from '../components/Toast';
 import Preparedness from './Preparedness';
@@ -28,12 +29,14 @@ interface DashboardProps {
 let toastIdCounter = 0;
 
 const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
-  const { shelters, loading, error, updateShelter } = useShelters(true);
   const { disasters, activeEvent } = useDisasters(true);
+  const { shelters, loading, error, updateShelter, newlyActivatedIds, clearNewlyActivated } =
+    useShelters(true, activeEvent?.id);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null);
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'response' | 'preparedness'>('response');
+  const [irisAnalyzing, setIrisAnalyzing] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const mapSectionRef = useRef<HTMLDivElement>(null);
 
@@ -60,6 +63,9 @@ const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
   }, []);
 
   const handleShelterUpdate = useCallback((event: ShelterUpdateEvent) => {
+    // Only process updates for the current active event
+    if (activeEvent && event.disasterEventId !== activeEvent.id) return;
+
     updateShelter(event.shelterId, event.update);
 
     const toast: ToastItem = {
@@ -73,7 +79,7 @@ const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
       timestamp: Date.now(),
     };
     setToasts(prev => [...prev.slice(-2), toast]);
-  }, [updateShelter]);
+  }, [updateShelter, activeEvent]);
 
   useSocket(token, handleShelterUpdate);
 
@@ -135,6 +141,7 @@ const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
   }
 
   const isTablet = windowWidth < 1024;
+  const activeShelters = shelters.filter(s => s.latestUpdate !== null);
 
   return (
     <div style={styles.page}>
@@ -145,6 +152,7 @@ const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
         activeEvent={activeEvent}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        irisAnalyzing={irisAnalyzing}
       />
 
       {activeTab === 'response' ? (
@@ -153,7 +161,10 @@ const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
             {/* Stat Cards Row */}
             <StatCards stats={stats} />
 
-            {/* Map + AI Panel */}
+            {/* Broadcast Composer */}
+            <BroadcastComposer activeEvent={activeEvent} />
+
+            {/* Map + IRIS Panel */}
             <div
               ref={mapSectionRef}
               id="map-section"
@@ -167,7 +178,13 @@ const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
                 height: isTablet ? '50vh' : '60vh',
                 minHeight: 400,
               }}>
-                <Map shelters={shelters} flyTarget={flyTarget} openPopupId={openPopupId} />
+                <Map
+                  shelters={activeShelters}
+                  flyTarget={flyTarget}
+                  openPopupId={openPopupId}
+                  newlyActivatedIds={newlyActivatedIds}
+                  onActivationAnimationDone={clearNewlyActivated}
+                />
               </div>
               <div style={{
                 ...styles.aiWrap,
@@ -177,9 +194,10 @@ const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
                 borderLeft: isTablet ? 'none' : '1px solid #e2e8f0',
                 borderTop: isTablet ? '1px solid #e2e8f0' : 'none',
               }}>
-                <AiPanel
+                <IrisPanel
                   activeEvent={activeEvent}
                   onFlyToShelter={handleFlyToShelter}
+                  onAnalyzing={setIrisAnalyzing}
                 />
               </div>
             </div>
@@ -205,7 +223,13 @@ const Dashboard = ({ user, token, onLogout }: DashboardProps) => {
         </div>
       ) : (
         <div style={styles.scrollArea}>
-          <Preparedness disasters={disasters} />
+          <Preparedness
+            disasters={disasters}
+            onPanToParish={(parish: string) => {
+              setActiveTab('response');
+              setTimeout(() => handlePanToParish(parish), 300);
+            }}
+          />
         </div>
       )}
 

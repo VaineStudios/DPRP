@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import type { ErrorRequestHandler } from 'express';
 import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
@@ -9,6 +10,7 @@ import { createUpdateRouter } from './routes/updates.js';
 import recommendRoutes from './routes/recommend.js';
 import disasterRoutes from './routes/disasters.js';
 import { createAiRouter } from './routes/ai.js';
+import { createBroadcastRouter } from './routes/broadcasts.js';
 import { initializeSocket } from './services/socket.js';
 
 const app = express();
@@ -36,6 +38,25 @@ app.use('/api/updates', createUpdateRouter(io));
 app.use('/api/recommend', recommendRoutes);
 app.use('/api/disasters', disasterRoutes);
 app.use('/api/ai', createAiRouter(io));
+app.use('/api/broadcasts', createBroadcastRouter(io));
+
+// Global error handler — catches anything that slips through route-level try/catch
+const globalErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+  console.error('Unhandled error:', err);
+  const message = err instanceof Error ? err.message : 'Internal server error';
+  if (!res.headersSent) {
+    res.status(500).json({ error: message });
+  }
+};
+app.use(globalErrorHandler);
+
+// Catch unhandled rejections and uncaught exceptions so the process doesn't crash
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled promise rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+});
 
 // Start server
 const PORT = process.env.PORT || 3000;
